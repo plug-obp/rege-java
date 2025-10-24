@@ -44,8 +44,39 @@ class RegeReaderTest {
     
     @Test
     void testReadTokenWithEscape() {
+        // Escape sequences are processed: \] becomes ]
         Expression result = RegeReader.readExpression("τ[abc\\]d]");
-        assertEquals(new Token("abc\\]d"), result);
+        assertEquals(new Token("abc]d"), result);
+    }
+    
+    @Test
+    void testReadTokenEscapeNewline() {
+        Expression result = RegeReader.readExpression("τ[hello\\nworld]");
+        assertEquals(new Token("hello\nworld"), result);
+    }
+    
+    @Test
+    void testReadTokenEscapeTab() {
+        Expression result = RegeReader.readExpression("τ[a\\tb]");
+        assertEquals(new Token("a\tb"), result);
+    }
+    
+    @Test
+    void testReadTokenEscapeBackslash() {
+        Expression result = RegeReader.readExpression("τ[a\\\\b]");
+        assertEquals(new Token("a\\b"), result);
+    }
+    
+    @Test
+    void testReadTokenEscapeOpenBracket() {
+        Expression result = RegeReader.readExpression("τ[a\\[b]");
+        assertEquals(new Token("a[b"), result);
+    }
+    
+    @Test
+    void testReadTokenMultipleEscapes() {
+        Expression result = RegeReader.readExpression("τ[\\n\\t\\]\\\\]");
+        assertEquals(new Token("\n\t]\\"), result);
     }
     
     @Test

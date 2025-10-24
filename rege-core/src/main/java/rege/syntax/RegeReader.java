@@ -312,26 +312,53 @@ public class RegeReader {
     }
     
     /**
-     * Read characters until we hit ']', preserving escape sequences.
-     * The parser keeps backslashes in token values (e.g., "\]" stays as "\]").
+     * Read and process token value with escape sequence handling.
+     * <p>
+     * Escape sequences are processed:
+     * <ul>
+     *   <li>\n → newline</li>
+     *   <li>\t → tab</li>
+     *   <li>\r → carriage return</li>
+     *   <li>\\ → backslash</li>
+     *   <li>\] → closing bracket</li>
+     *   <li>\[ → opening bracket</li>
+     *   <li>\x (other) → \x (kept as-is)</li>
+     * </ul>
+     * <p>
+     * The token value contains the interpreted string, not the escape syntax.
+     * External tools receive the actual characters (e.g., a real newline, not "\n").
      */
     private String readTokenValue(Peekable input) {
-        StringBuilder token = new StringBuilder();
-        char precedent = '\0';
+        StringBuilder sb = new StringBuilder();
         
         while (input.hasNext()) {
-            char current = input.peek();
-            
-            // Stop at ']' unless it's escaped with '\'
-            if (current == ']' && precedent != '\\') {
+            char ch = input.peek();
+            if (ch == ']') {
                 break;
             }
             
-            precedent = current;
-            token.append(current);
             input.next();
+            
+            // Handle escape sequences
+            if (ch == '\\' && input.hasNext()) {
+                char next = input.next();
+                switch (next) {
+                    case 'n' -> sb.append('\n');
+                    case 't' -> sb.append('\t');
+                    case 'r' -> sb.append('\r');
+                    case '\\' -> sb.append('\\');
+                    case ']' -> sb.append(']');
+                    case '[' -> sb.append('[');
+                    default -> {
+                        sb.append('\\');
+                        sb.append(next);
+                    }
+                }
+            } else {
+                sb.append(ch);
+            }
         }
         
-        return token.toString();
+        return sb.toString();
     }
 }

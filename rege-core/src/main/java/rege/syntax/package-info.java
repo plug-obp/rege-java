@@ -62,17 +62,37 @@
  *   <li>{@code a*b|c} parses as {@code ((a*)b)|c} - star, then concat, then union</li>
  * </ul>
  * 
+ * <h3>Escape Sequences</h3>
+ * <p>Token values support escape sequences for special characters. The parsers
+ * process these escapes, so token values contain the <i>interpreted</i> characters:
+ * 
+ * <table border="1">
+ *   <tr><th>Escape</th><th>Character</th><th>Example</th></tr>
+ *   <tr><td>\n</td><td>Newline</td><td>{@code τ[hello\nworld]} → Token("hello\nworld")</td></tr>
+ *   <tr><td>\t</td><td>Tab</td><td>{@code τ[a\tb]} → Token("a\tb")</td></tr>
+ *   <tr><td>\\</td><td>Backslash</td><td>{@code τ[a\\b]} → Token("a\b")</td></tr>
+ *   <tr><td>\]</td><td>Closing bracket</td><td>{@code τ[a\]b]} → Token("a]b")</td></tr>
+ *   <tr><td>\[</td><td>Opening bracket</td><td>{@code τ[a\[b]} → Token("a[b")</td></tr>
+ * </table>
+ * 
+ * <p><b>Important:</b> Token values are interpreted, not literal:
+ * <ul>
+ *   <li>Parser input: {@code "τ[hello\nworld]"} contains escape syntax</li>
+ *   <li>Token value: {@code "hello\nworld"} contains actual newline character</li>
+ *   <li>External tools receive the interpreted string with real special characters</li>
+ * </ul>
+ * 
  * <h3>Smart Construction</h3>
  * <p>Both parsers support smart construction mode (enabled by default), which
  * applies algebraic simplifications during parsing:
  * 
  * <pre>{@code
  * // Smart mode (default)
- * Expression expr1 = RegeReader.read("ε|ε");
+ * Expression expr1 = RegeReader.readExpression("ε|ε");
  * // Returns: Epsilon (simplified via A|A = A)
  * 
  * // Raw mode (no simplification)
- * Expression expr2 = RegeReader.read("ε|ε", false);
+ * Expression expr2 = RegeReader.readExpression("ε|ε", false);
  * // Returns: Union(Epsilon, Epsilon)
  * }</pre>
  * 

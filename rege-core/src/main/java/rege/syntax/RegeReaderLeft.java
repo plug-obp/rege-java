@@ -270,7 +270,21 @@ public class RegeReaderLeft {
     }
     
     /**
-     * Read characters until we hit ']', handling escape sequences.
+     * Read and process token value with escape sequence handling.
+     * <p>
+     * Escape sequences are processed:
+     * <ul>
+     *   <li>\n → newline</li>
+     *   <li>\t → tab</li>
+     *   <li>\r → carriage return</li>
+     *   <li>\\ → backslash</li>
+     *   <li>\] → closing bracket</li>
+     *   <li>\[ → opening bracket</li>
+     *   <li>\x (other) → \x (kept as-is)</li>
+     * </ul>
+     * <p>
+     * The token value contains the interpreted string, not the escape syntax.
+     * External tools receive the actual characters (e.g., a real newline, not "\n").
      */
     private String readTokenValue(Peekable input) {
         StringBuilder sb = new StringBuilder();

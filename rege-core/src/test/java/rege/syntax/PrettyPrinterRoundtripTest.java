@@ -57,15 +57,29 @@ class PrettyPrinterRoundtripTest {
     
     @Test
     void roundtripTokenWithSpecialChars() {
-        // Note: Parser keeps backslash in escape sequences, so Token("a]b") can't exist
-        // because `τ[a]b]` parses as Token("a") followed by unparsed "b]".
-        // The proper token value that roundtrips is Token("a\]b") - literal backslash-bracket
-        assertRoundtrip(new Token("a\\b"));  // backslash-b roundtrips as-is
-        assertRoundtrip(new Token("a\\]b")); // backslash-bracket-b roundtrips as-is
+        // Token values contain interpreted characters
+        // The printer escapes them, and the parser interprets them back
         
-        // To include a bracket in token, you write Token("a\]b") and it prints/parses correctly
-        String printed = PrettyPrinter.print(new Token("a\\]b"));
+        // Backslash: Token("a\b") → "τ[a\\b]" → Token("a\b")
+        assertRoundtrip(new Token("a\\b"));
+        
+        // Bracket: Token("a]b") → "τ[a\]b]" → Token("a]b")
+        assertRoundtrip(new Token("a]b"));
+        
+        // Newline: Token("a\nb") → "τ[a\nb]" → Token("a\nb")
+        assertRoundtrip(new Token("a\nb"));
+        
+        // Tab: Token("a\tb") → "τ[a\tb]" → Token("a\tb")
+        assertRoundtrip(new Token("a\tb"));
+        
+        // Multiple escapes together
+        assertRoundtrip(new Token("\n\t]\\"));
+        
+        // Verify a specific case
+        String printed = PrettyPrinter.print(new Token("a]b"));
         assertEquals("τ[a\\]b]", printed);
+        Expression parsed = RegeReader.readExpression(printed, false);
+        assertEquals(new Token("a]b"), parsed);
     }
     
     @Test

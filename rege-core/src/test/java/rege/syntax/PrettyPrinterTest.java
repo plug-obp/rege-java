@@ -26,15 +26,23 @@ class PrettyPrinterTest {
     
     @Test
     void printTokenWithEscaping() {
-        // Backslash doesn't need escaping (parser doesn't treat it specially except before ])
-        assertEquals("τ[a\\b]", PrettyPrinter.print(new Token("a\\b")));
+        // Backslash in token value gets escaped
+        assertEquals("τ[a\\\\b]", PrettyPrinter.print(new Token("a\\b")));
         
         // Closing bracket should be escaped
-        // Note: Token("a]b") can't be created from parser, but we can escape it for printing
         assertEquals("τ[a\\]b]", PrettyPrinter.print(new Token("a]b")));
         
-        // Backslash-bracket together (already valid escape sequence in token value)
-        assertEquals("τ[a\\]b]", PrettyPrinter.print(new Token("a\\]b")));
+        // Opening bracket should be escaped
+        assertEquals("τ[a\\[b]", PrettyPrinter.print(new Token("a[b")));
+        
+        // Newline should be escaped
+        assertEquals("τ[hello\\nworld]", PrettyPrinter.print(new Token("hello\nworld")));
+        
+        // Tab should be escaped
+        assertEquals("τ[a\\tb]", PrettyPrinter.print(new Token("a\tb")));
+        
+        // Multiple special characters
+        assertEquals("τ[\\n\\t\\]\\\\]", PrettyPrinter.print(new Token("\n\t]\\")));
     }
     
     @Test

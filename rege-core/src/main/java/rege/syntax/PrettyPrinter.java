@@ -24,23 +24,34 @@ import rege.syntax.model.*;
  *   <li>Union (lowest precedence)</li>
  * </ol>
  * 
+ * <p><b>Escape Sequences:</b>
+ * Token values contain interpreted characters. The printer escapes special characters:
+ * <ul>
+ *   <li>Newline → \n</li>
+ *   <li>Tab → \t</li>
+ *   <li>Backslash → \\</li>
+ *   <li>Bracket ] → \]</li>
+ * </ul>
+ * 
  * <p><b>Usage:</b>
  * <pre>{@code
  * Expression expr = new Union(new Token("a"), new Token("b"));
  * String text = PrettyPrinter.print(expr);
  * // text = "τ[a]|τ[b]"
  * 
- * // With explicit concatenation operator
- * String text2 = PrettyPrinter.print(expr, true);
+ * // Token with special characters
+ * Expression expr2 = new Token("hello\nworld");
+ * String text2 = PrettyPrinter.print(expr2);
+ * // text2 = "τ[hello\nworld]"
  * }</pre>
  * 
  * <p><b>Roundtripping:</b>
  * The output is designed to be parseable by {@link RegeReader}:
  * <pre>{@code
- * Expression original = ...;
- * String printed = PrettyPrinter.print(original);
- * Expression parsed = RegeReader.read(printed);
- * assert original.equals(parsed);
+ * Expression original = new Token("a]b");
+ * String printed = PrettyPrinter.print(original);  // "τ[a\]b]"
+ * Expression parsed = RegeReader.readExpression(printed);
+ * assert original.equals(parsed);  // true
  * }</pre>
  * 
  * @see RegeReader
@@ -95,16 +106,19 @@ public class PrettyPrinter implements Visitor<Integer, String> {
     
     @Override
     public String visitToken(Token token, Integer parentPrecedence) {
-        // The parser treats \] as an escape sequence (keeping both chars in token value).
-        // So if token already contains \], we don't need to escape it again.
-        // Only escape ] that's NOT preceded by \.
+        // Token values contain interpreted characters. We need to escape them for the syntax.
+        // This ensures roundtrip: parse(print(expr)) == expr
         StringBuilder escaped = new StringBuilder();
-        for (int i = 0; i < token.value().length(); i++) {
-            char c = token.value().charAt(i);
-            if (c == ']' && (i == 0 || token.value().charAt(i - 1) != '\\')) {
-                escaped.append('\\');
+        for (char c : token.value().toCharArray()) {
+            switch (c) {
+                case '\n' -> escaped.append("\\n");
+                case '\t' -> escaped.append("\\t");
+                case '\r' -> escaped.append("\\r");
+                case '\\' -> escaped.append("\\\\");
+                case ']' -> escaped.append("\\]");
+                case '[' -> escaped.append("\\[");
+                default -> escaped.append(c);
             }
-            escaped.append(c);
         }
         return "τ[" + escaped + "]";
     }

@@ -177,11 +177,33 @@ RegeReader.readExpression("a|b|c", false)
 - `a.b|c.d` parses as `(a⋅b)|(c⋅d)` - both concats bind before union
 - `a*b|c` parses as `((a*)⋅b)|c` - star highest, concat middle, union lowest
 
+#### Escape Sequences
+
+Token values support escape sequences for special characters:
+
+| Escape | Character | Example |
+|--------|-----------|---------|
+| `\n` | Newline | `τ[hello\nworld]` → Token("hello\nworld") |
+| `\t` | Tab | `τ[a\tb]` → Token("a\tb") |
+| `\r` | Carriage return | `τ[line\rreturn]` → Token("line\rreturn") |
+| `\\` | Backslash | `τ[a\\b]` → Token("a\b") |
+| `\]` | Closing bracket | `τ[a\]b]` → Token("a]b") |
+| `\[` | Opening bracket | `τ[a\[b]` → Token("a[b") |
+
+**Important**: Token values contain *interpreted* characters. The escape syntax is only in the textual representation:
+- Parser input: `"τ[hello\nworld]"` → Token contains actual newline
+- Token value passed to external tools: `"hello\nworld"` (with real newline)
+- PrettyPrinter output: `"τ[hello\nworld]"` (escapes special chars)
+
 #### Usage
 
 ```java
 // With smart constructors (default)
 Expression expr = RegeReader.readExpression("τ[hello]|ϵ");
+
+// Token with special characters (escape sequences processed)
+Expression token = RegeReader.readExpression("τ[hello\\nworld]");
+// token = Token("hello\nworld") - contains actual newline
 
 // Without smart constructors
 Expression raw = RegeReader.readExpression("∅*", false);
@@ -191,7 +213,7 @@ Expression smart = RegeReader.readExpression("∅*", true);
 // smart = Epsilon (simplified)
 ```
 
-**Test Coverage**: 57 tests
+**Test Coverage**: 60+ tests
 
 ---
 
