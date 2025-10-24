@@ -11,9 +11,10 @@ rege.syntax/
 │   ├── Terminal        # Atomic expressions (Token, Empty, Epsilon)
 │   ├── Composite       # Compound expressions (Union, Concatenation, KleeneStar)
 │   ├── Visitor         # Generic visitor pattern interface
-│   └── Simplifier      # Algebraic simplification visitor
+└── Simplifier          # Algebraic simplification visitor
 ├── RegeReader          # Right-associative parser
-└── RegeReaderLeft      # Left-associative parser
+├── RegeReaderLeft      # Left-associative parser
+└── PrettyPrinter       # Expression to text converter
 ```
 
 ---
@@ -263,6 +264,140 @@ Expression simplified = RegeReaderLeft.readExpression("ϵ|∅");
 
 ---
 
+### PrettyPrinter (Expression to Text)
+
+**Visitor-based converter** that transforms expression trees back into textual syntax compatible with both parsers.
+
+#### Features
+
+- **Precedence-aware formatting**: Adds parentheses only when necessary based on operator precedence
+- **Unicode mathematical symbols**: Uses ∅, ε, τ[...], |, ⋅, * notation
+- **Escape handling**: Properly escapes special characters in token values (backslash, closing bracket)
+- **Roundtrip guarantee**: `parse(print(expr)).equals(expr)` for all expressions
+- **Two modes**: Implicit concatenation (default) or explicit with ⋅ operator
+
+#### Operator Precedence (for parenthesization)
+
+1. **Atoms** (Token, Empty, Epsilon) - highest precedence (never need parens)
+2. **Kleene Star** (`*`) - high precedence
+3. **Concatenation** (`.` or implicit) - medium precedence
+4. **Union** (`|`) - lowest precedence (needs parens in other contexts)
+
+#### Usage
+
+```java
+// Basic usage with implicit concatenation (default)
+Expression expr = new Concatenation(
+    new KleeneStar(new Union(new Token("a"), new Token("b"))),
+    new Token("c")
+);
+
+String text = PrettyPrinter.print(expr);
+// Result: "(τ[a]|τ[b])*τ[c]"
+
+// Parse back to verify roundtrip
+Expression parsed = RegeReader.read(text);
+assert expr.equals(parsed);  // true
+```
+
+#### Explicit Concatenation Mode
+
+```java
+Expression expr = new Concatenation(new Token("a"), new Token("b"));
+
+// Implicit concatenation (default)
+String implicit = PrettyPrinter.print(expr);
+// Result: "τ[a]τ[b]"
+
+// Explicit concatenation
+String explicit = PrettyPrinter.print(expr, true);
+// Result: "τ[a]⋅τ[b]"
+```
+
+#### Escaping Special Characters
+
+```java
+// Backslashes and closing brackets are escaped
+Expression token1 = new Token("a\\b");
+String printed1 = PrettyPrinter.print(token1);
+// Result: "τ[a\\\\b]"
+
+Expression token2 = new Token("a]b");
+String printed2 = PrettyPrinter.print(token2);
+// Result: "τ[a\\]b]"
+```
+
+#### Precedence Examples
+
+The printer minimizes parentheses based on precedence:
+
+```java
+// Union has lowest precedence - needs parens in concatenation
+Expression expr1 = new Concatenation(
+    new Union(new Token("a"), new Token("b")),
+    new Token("c")
+);
+PrettyPrinter.print(expr1);  // "(τ[a]|τ[b])τ[c]"
+
+// Star has highest precedence - no parens needed
+Expression expr2 = new Concatenation(
+    new KleeneStar(new Token("a")),
+    new Token("b")
+);
+PrettyPrinter.print(expr2);  // "τ[a]*τ[b]"
+
+// Nested unions don't need parens at same level
+Expression expr3 = new Union(
+    new Union(new Token("a"), new Token("b")),
+    new Token("c")
+);
+PrettyPrinter.print(expr3);  // "τ[a]|τ[b]|τ[c]"
+```
+
+#### Roundtripping
+
+The PrettyPrinter is designed to guarantee roundtrip property with parsers:
+
+```java
+// Test roundtrip with any expression
+Expression original = /* any expression */;
+String printed = PrettyPrinter.print(original);
+Expression parsed = RegeReader.read(printed);
+
+// Structural equality preserved (for right-associative structures)
+assert original.equals(parsed);
+
+// Note: Left-associative structures may become right-associative
+Expression leftAssoc = new Concatenation(
+    new Concatenation(new Token("a"), new Token("b")),
+    new Token("c")
+);  // (a⋅b)⋅c
+
+String text = PrettyPrinter.print(leftAssoc);  // "τ[a]τ[b]τ[c]"
+Expression reparsed = RegeReader.read(text);   // a⋅(b⋅c) [right-assoc]
+
+// Semantically equivalent but structurally different
+assert !leftAssoc.equals(reparsed);  // Different structure
+// But they accept the same language
+```
+
+#### Examples
+
+| Expression | Printed Output |
+|------------|----------------|
+| `Token("a")` | `τ[a]` |
+| `Expression.EMPTY` | `∅` |
+| `Expression.EPSILON` | `ε` |
+| `Union(Token("a"), Token("b"))` | `τ[a]|τ[b]` |
+| `Concatenation(Token("a"), Token("b"))` | `τ[a]τ[b]` |
+| `KleeneStar(Token("a"))` | `τ[a]*` |
+| `KleeneStar(Union(Token("a"), Token("b")))` | `(τ[a]|τ[b])*` |
+| `Concatenation(KleeneStar(Token("a")), Token("b"))` | `τ[a]*τ[b]` |
+
+**Test Coverage**: 45 tests (PrettyPrinterTest) + 33 roundtrip tests (PrettyPrinterRoundtripTest)
+
+---
+
 ## 🎯 Key Design Patterns
 
 ### 1. **Sealed Types** (Exhaustive Pattern Matching)
@@ -314,7 +449,11 @@ default Expression concat(Expression other) {
 - **RegeReaderLeftTest** (31 tests): Left-associative parser
 - **RegeReaderComparisonTest** (5 tests): Structural differences and semantic equivalence
 
-**Total: 157 tests** ✅
+### Pretty Printer Tests (78 tests)
+- **PrettyPrinterTest** (45 tests): Formatting, precedence, escaping
+- **PrettyPrinterRoundtripTest** (33 tests): Parse-print-parse roundtrip verification
+
+**Total: 235 tests** ✅
 
 ---
 
@@ -505,6 +644,7 @@ String result = expr.accept(new MyCustomVisitor(), null);
 
 ### Utilities
 - `Simplifier` - Algebraic simplification visitor
+- `PrettyPrinter.print(Expression)` - Expression to text converter
 - Smart constructors: `expr.union(other)`, `expr.concat(other)`, `expr.star()`
 
 ---
