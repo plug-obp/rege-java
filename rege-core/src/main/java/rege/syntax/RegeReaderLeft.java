@@ -35,35 +35,100 @@ import rege.syntax.model.*;
  * F  -> P '*'*                       // Kleene star (highest precedence)
  * P  -> ∅ | ϵ | τ[...] | (E)        // Primary (atoms)
  * </pre>
+ * 
+ * <p>Returns {@link ParseResult} with either a successfully parsed expression
+ * or a list of errors with precise position information.
+ * 
+ * <p>Usage:
+ * <pre>{@code
+ * ParseResult result = RegeReaderLeft.parse("τ[a] | τ[b]");
+ * switch (result) {
+ *     case ParseResult.Success(var expr) -> System.out.println("Parsed: " + expr);
+ *     case ParseResult.Failure(var errors, var source) -> 
+ *         errors.forEach(e -> System.err.println(e.formatWithSource(source)));
+ * }
+ * }</pre>
  */
 public class RegeReaderLeft {
     
     private final boolean isSmart;
+    private final java.util.List<ParseError> errors = new java.util.ArrayList<>();
     
     private RegeReaderLeft(boolean isSmart) {
         this.isSmart = isSmart;
     }
     
     /**
-     * Read an expression from a string, producing a left-associative parse tree.
+     * Parse an expression from string, producing a left-associative parse tree.
      * Uses smart constructors by default.
      * 
      * @param input the string to parse
-     * @return the parsed expression, or null if parsing fails
+     * @return parse result containing either the expression or errors
      */
-    public static Expression readExpression(String input) {
-        return readExpression(input, true);
+    public static ParseResult parse(String input) {
+        return parse(input, true);
     }
     
     /**
-     * Read an expression from a string, producing a left-associative parse tree.
+     * Parse an expression from string, producing a left-associative parse tree.
      * 
      * @param input the string to parse
      * @param isSmart whether to use smart constructors that apply simplification rules
-     * @return the parsed expression, or null if parsing fails
+     * @return parse result containing either the expression or errors
      */
+    public static ParseResult parse(String input, boolean isSmart) {
+        RegeReaderLeft reader = new RegeReaderLeft(isSmart);
+        Peekable peekable = new Peekable(input);
+        Expression expr = reader.parseExpression(peekable);
+        
+        if (!reader.errors.isEmpty()) {
+            return new ParseResult.Failure(reader.errors, input);
+        }
+        
+        if (expr == null) {
+            // No errors but failed to parse - generic error
+            reader.error(peekable.rangeHere(), "Failed to parse expression");
+            return new ParseResult.Failure(reader.errors, input);
+        }
+        
+        // Check for trailing characters
+        reader.eatSpace(peekable);
+        if (peekable.hasNext()) {
+            Position start = peekable.position();
+            // Consume all trailing characters to show full range
+            while (peekable.hasNext()) {
+                peekable.next();
+            }
+            reader.error(peekable.rangeFrom(start), "Unexpected trailing characters");
+            return new ParseResult.Failure(reader.errors, input);
+        }
+        
+        return new ParseResult.Success(expr);
+    }
+    
+    /**
+     * Legacy method for backward compatibility.
+     * @deprecated Use {@link #parse(String)} instead
+     */
+    @Deprecated
+    public static Expression readExpression(String input) {
+        return parse(input, true).orElse(null);
+    }
+    
+    /**
+     * Legacy method for backward compatibility.
+     * @deprecated Use {@link #parse(String, boolean)} instead
+     */
+    @Deprecated
     public static Expression readExpression(String input, boolean isSmart) {
-        return new RegeReaderLeft(isSmart).parseExpression(new Peekable(input));
+        return parse(input, isSmart).orElse(null);
+    }
+    
+    /**
+     * Record an error at the specified range.
+     */
+    private void error(Range range, String message) {
+        errors.add(new ParseError(range, message));
     }
     
     /**
@@ -89,9 +154,11 @@ public class RegeReaderLeft {
                 break;
             }
             
+            Position opPos = input.position();
             input.next(); // consume operator
             Expression right = parseConcatenation(input);
             if (right == null) {
+                error(input.rangeFrom(opPos), "Expected expression after union operator '|'");
                 return null;
             }
             
@@ -128,7 +195,9 @@ public class RegeReaderLeft {
             
             // Check for explicit concatenation operators
             boolean hasExplicitOperator = (ch == '.' || ch == '⋅');
+            Position opPos = null;
             if (hasExplicitOperator) {
+                opPos = input.position();
                 input.next(); // consume operator
             }
             
@@ -142,6 +211,7 @@ public class RegeReaderLeft {
             if (right == null) {
                 // If we had an explicit operator, this is an error
                 if (hasExplicitOperator) {
+                    error(input.rangeFrom(opPos), "Expected expression after concatenation operator '.'");
                     return null;
                 }
                 // Otherwise, just stop (no more terms to concatenate)
@@ -224,6 +294,8 @@ public class RegeReaderLeft {
             return parseParens(input);
         }
         
+        // Unexpected character
+        error(Range.at(input.position()), "Unexpected character '" + ch + "'");
         return null;
     }
     
@@ -234,17 +306,30 @@ public class RegeReaderLeft {
      * instead of creating an invalid empty token.
      */
     private Expression parseToken(Peekable input) {
+        Position start = input.position();
         input.next(); // consume τ or t
         eatSpace(input);
         
-        if (!input.hasNext() || input.peek() != '[') {
+        if (!input.hasNext()) {
+            error(input.rangeFrom(start), "Expected '[' after token prefix");
+            return null;
+        }
+        
+        if (input.peek() != '[') {
+            error(Range.at(input.position()), "Expected '[' after token prefix, got '" + input.peek() + "'");
             return null;
         }
         input.next(); // consume [
         
         String value = readTokenValue(input);
         
-        if (!input.hasNext() || input.peek() != ']') {
+        if (!input.hasNext()) {
+            error(input.rangeFrom(start), "Unclosed token: missing ']'");
+            return null;
+        }
+        
+        if (input.peek() != ']') {
+            error(Range.at(input.position()), "Expected ']' to close token, got '" + input.peek() + "'");
             return null;
         }
         input.next(); // consume ]
@@ -261,15 +346,23 @@ public class RegeReaderLeft {
      * Parse a parenthesized expression: (E).
      */
     private Expression parseParens(Peekable input) {
+        Position start = input.position();
         input.next(); // consume (
         
         Expression expr = parseExpression(input);
         if (expr == null) {
+            error(input.rangeFrom(start), "Expected expression after '('");
             return null;
         }
         
         eatSpace(input);
-        if (!input.hasNext() || input.peek() != ')') {
+        if (!input.hasNext()) {
+            error(input.rangeFrom(start), "Unclosed parenthesis: missing ')'");
+            return null;
+        }
+        
+        if (input.peek() != ')') {
+            error(Range.at(input.position()), "Expected ')' to close parenthesis, got '" + input.peek() + "'");
             return null;
         }
         input.next(); // consume )
