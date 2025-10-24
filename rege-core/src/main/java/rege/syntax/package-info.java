@@ -138,6 +138,36 @@
  * 
  * <p><b>See:</b> {@link rege.reader.infra} package documentation
  * 
+ * <h3>Token Content Validation</h3>
+ * <p>Both parsers support validating token content using {@link rege.reader.infra.AlienValidator}.
+ * This is useful when tokens contain domain-specific syntax that needs validation:
+ * 
+ * <pre>{@code
+ * // Only allow lowercase letters in tokens
+ * AlienValidator lowercase = AlienValidator.pattern("[a-z]+", "Lowercase only");
+ * ParseResult<Expression> result = RegeReader.parse("τ[hello]|τ[WORLD]", true, lowercase);
+ * // WORLD will cause a validation error
+ * 
+ * // Compose validators
+ * AlienValidator strict = AlienValidator.nonEmpty()
+ *     .and(AlienValidator.pattern("[a-zA-Z0-9]+", "Alphanumeric"))
+ *     .and(customValidator);
+ * 
+ * // Custom validation
+ * AlienValidator balanced = (content, range) -> {
+ *     // Check for balanced parentheses in token content
+ *     if (!isBalanced(content)) {
+ *         return new ParseResult.Failure<>(
+ *             List.of(new ParseError(range, "Unbalanced parentheses")),
+ *             content
+ *         );
+ *     }
+ *     return new ParseResult.Success<>(content);
+ * };
+ * }</pre>
+ * 
+ * <p><b>See:</b> {@link rege.reader.infra.AlienValidator} for complete documentation
+ * 
  * <h3>Backward Compatibility</h3>
  * <p>Legacy methods are preserved but deprecated:
  * <pre>{@code

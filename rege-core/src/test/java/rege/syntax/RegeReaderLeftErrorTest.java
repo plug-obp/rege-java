@@ -211,4 +211,90 @@ class RegeReaderLeftErrorTest {
         rege.syntax.model.Union outerUnion = (rege.syntax.model.Union) expr;
         assertTrue(outerUnion.lhs() instanceof rege.syntax.model.Union);
     }
+    
+    // ============================================================================
+    // Alien Validator Tests
+    // ============================================================================
+    
+    @Test
+    void testAlienValidatorAcceptAll() {
+        AlienValidator validator = AlienValidator.acceptAll();
+        ParseResult<Expression> result = RegeReaderLeft.parse("τ[anything!@#$]", true, validator);
+        
+        assertTrue(result.isSuccess());
+    }
+    
+    @Test
+    void testAlienValidatorPattern() {
+        AlienValidator lowercase = AlienValidator.pattern("[a-z]+", "Lowercase letters only");
+        
+        // Valid: lowercase
+        ParseResult<Expression> result1 = RegeReaderLeft.parse("τ[hello]", true, lowercase);
+        assertTrue(result1.isSuccess());
+        
+        // Invalid: contains uppercase
+        ParseResult<Expression> result2 = RegeReaderLeft.parse("τ[Hello]", true, lowercase);
+        assertTrue(result2.isFailure());
+        
+        if (result2 instanceof ParseResult.Failure<Expression> failure) {
+            assertEquals(1, failure.errors().size());
+            assertEquals("Lowercase letters only", failure.errors().get(0).message());
+        }
+    }
+    
+    @Test
+    void testAlienValidatorMultipleTokens() {
+        AlienValidator alphanumeric = AlienValidator.pattern("[a-zA-Z0-9]+", "Alphanumeric only");
+        
+        // All valid tokens
+        ParseResult<Expression> result1 = RegeReaderLeft.parse("τ[hello]|τ[world123]", true, alphanumeric);
+        assertTrue(result1.isSuccess());
+        
+        // One invalid token
+        ParseResult<Expression> result2 = RegeReaderLeft.parse("τ[hello]|τ[world!]", true, alphanumeric);
+        assertTrue(result2.isFailure());
+        
+        if (result2 instanceof ParseResult.Failure<Expression> failure) {
+            // Should have at least one validation error
+            assertTrue(failure.errors().size() >= 1);
+            boolean hasAlphanumericError = failure.errors().stream()
+                .anyMatch(e -> e.message().contains("Alphanumeric"));
+            assertTrue(hasAlphanumericError, "Should have alphanumeric validation error");
+        }
+    }
+    
+    @Test
+    void testAlienValidatorComposition() {
+        AlienValidator strict = AlienValidator.nonEmpty()
+            .and(AlienValidator.pattern("[a-z]+", "Lowercase only"));
+        
+        // Valid
+        ParseResult<Expression> result1 = RegeReaderLeft.parse("τ[hello]", true, strict);
+        assertTrue(result1.isSuccess());
+        
+        // Invalid: not lowercase
+        ParseResult<Expression> result2 = RegeReaderLeft.parse("τ[HELLO]", true, strict);
+        assertTrue(result2.isFailure());
+    }
+    
+    @Test
+    void testAlienValidatorWithLeftAssociativity() {
+        AlienValidator lowercase = AlienValidator.pattern("[a-z]+", "Lowercase only");
+        
+        // Valid complex expression (left-associative)
+        ParseResult<Expression> result1 = RegeReaderLeft.parse(
+            "τ[hello]|τ[world]|τ[test]",
+            true,
+            lowercase
+        );
+        assertTrue(result1.isSuccess());
+        
+        // Invalid: middle token fails validation
+        ParseResult<Expression> result2 = RegeReaderLeft.parse(
+            "τ[hello]|τ[WORLD]|τ[test]",
+            true,
+            lowercase
+        );
+        assertTrue(result2.isFailure());
+    }
 }

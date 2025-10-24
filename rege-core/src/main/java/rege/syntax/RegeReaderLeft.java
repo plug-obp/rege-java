@@ -53,21 +53,23 @@ import rege.syntax.model.*;
 public class RegeReaderLeft {
     
     private final boolean isSmart;
+    private final AlienValidator alienValidator;
     private final java.util.List<ParseError> errors = new java.util.ArrayList<>();
     
-    private RegeReaderLeft(boolean isSmart) {
+    private RegeReaderLeft(boolean isSmart, AlienValidator alienValidator) {
         this.isSmart = isSmart;
+        this.alienValidator = alienValidator;
     }
     
     /**
      * Parse an expression from string, producing a left-associative parse tree.
-     * Uses smart constructors by default.
+     * Uses smart constructors by default and no token validation.
      * 
      * @param input the string to parse
      * @return parse result containing either the expression or errors
      */
     public static ParseResult<Expression> parse(String input) {
-        return parse(input, true);
+        return parse(input, true, AlienValidator.acceptAll());
     }
     
     /**
@@ -78,7 +80,27 @@ public class RegeReaderLeft {
      * @return parse result containing either the expression or errors
      */
     public static ParseResult<Expression> parse(String input, boolean isSmart) {
-        RegeReaderLeft reader = new RegeReaderLeft(isSmart);
+        return parse(input, isSmart, AlienValidator.acceptAll());
+    }
+    
+    /**
+     * Parse an expression from string with token validation.
+     * 
+     * <p>The alien validator is called for each token's content to verify it conforms
+     * to expected syntax. For example, if tokens should contain only lowercase letters:
+     * <pre>{@code
+     * AlienValidator lowercase = AlienValidator.pattern("[a-z]+", "Lowercase only");
+     * ParseResult<Expression> result = RegeReaderLeft.parse("τ[hello]|τ[WORLD]", true, lowercase);
+     * // WORLD will cause a validation error
+     * }</pre>
+     * 
+     * @param input the string to parse
+     * @param isSmart whether to use smart constructors that apply simplification rules
+     * @param alienValidator validator for token content
+     * @return parse result containing either the expression or errors
+     */
+    public static ParseResult<Expression> parse(String input, boolean isSmart, AlienValidator alienValidator) {
+        RegeReaderLeft reader = new RegeReaderLeft(isSmart, alienValidator);
         Peekable peekable = new Peekable(input);
         Expression expr = reader.parseExpression(peekable);
         
@@ -322,7 +344,9 @@ public class RegeReaderLeft {
         }
         input.next(); // consume [
         
+        Position valueStart = input.position();
         String value = readTokenValue(input);
+        Position valueEnd = input.position();
         
         if (!input.hasNext()) {
             error(input.rangeFrom(start), "Unclosed token: missing ']'");
@@ -338,6 +362,16 @@ public class RegeReaderLeft {
         // Empty token value should be represented as epsilon, not Token("")
         if (value.isEmpty()) {
             return Expression.EPSILON;
+        }
+        
+        // Validate alien syntax in token value
+        Range valueRange = new Range(valueStart, valueEnd);
+        ParseResult<String> validationResult = alienValidator.validate(value, valueRange);
+        
+        if (validationResult instanceof ParseResult.Failure<String> failure) {
+            // Add validation errors to our error list
+            errors.addAll(failure.errors());
+            return null;
         }
         
         return new Token(value);

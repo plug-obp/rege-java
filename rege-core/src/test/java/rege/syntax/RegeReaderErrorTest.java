@@ -197,4 +197,157 @@ class RegeReaderErrorTest {
         
         assertNull(expr);
     }
+    
+    // ============================================================================
+    // Alien Validator Tests
+    // ============================================================================
+    
+    @Test
+    void testAlienValidatorAcceptAll() {
+        AlienValidator validator = AlienValidator.acceptAll();
+        ParseResult<Expression> result = RegeReader.parse("τ[anything!@#$]", true, validator);
+        
+        assertTrue(result.isSuccess());
+    }
+    
+    @Test
+    void testAlienValidatorNonEmpty() {
+        AlienValidator validator = AlienValidator.nonEmpty();
+        
+        // Non-empty should succeed
+        ParseResult<Expression> result1 = RegeReader.parse("τ[hello]", true, validator);
+        assertTrue(result1.isSuccess());
+        
+        // Empty should fail (but parser converts to epsilon, so this tests validation is not called)
+        ParseResult<Expression> result2 = RegeReader.parse("τ[]", true, validator);
+        assertTrue(result2.isSuccess()); // Empty tokens become epsilon before validation
+    }
+    
+    @Test
+    void testAlienValidatorPattern() {
+        AlienValidator lowercase = AlienValidator.pattern("[a-z]+", "Lowercase letters only");
+        
+        // Valid: lowercase
+        ParseResult<Expression> result1 = RegeReader.parse("τ[hello]", true, lowercase);
+        assertTrue(result1.isSuccess());
+        
+        // Invalid: contains uppercase
+        ParseResult<Expression> result2 = RegeReader.parse("τ[Hello]", true, lowercase);
+        assertTrue(result2.isFailure());
+        
+        if (result2 instanceof ParseResult.Failure<Expression> failure) {
+            assertEquals(1, failure.errors().size());
+            assertEquals("Lowercase letters only", failure.errors().get(0).message());
+        }
+    }
+    
+    @Test
+    void testAlienValidatorMultipleTokens() {
+        AlienValidator alphanumeric = AlienValidator.pattern("[a-zA-Z0-9]+", "Alphanumeric only");
+        
+        // All valid tokens
+        ParseResult<Expression> result1 = RegeReader.parse("τ[hello]|τ[world123]", true, alphanumeric);
+        assertTrue(result1.isSuccess());
+        
+        // One invalid token
+        ParseResult<Expression> result2 = RegeReader.parse("τ[hello]|τ[world!]", true, alphanumeric);
+        assertTrue(result2.isFailure());
+        
+        if (result2 instanceof ParseResult.Failure<Expression> failure) {
+            // Should have at least one validation error
+            assertTrue(failure.errors().size() >= 1);
+            boolean hasAlphanumericError = failure.errors().stream()
+                .anyMatch(e -> e.message().contains("Alphanumeric"));
+            assertTrue(hasAlphanumericError, "Should have alphanumeric validation error");
+        }
+    }
+    
+    @Test
+    void testAlienValidatorComposition() {
+        AlienValidator strict = AlienValidator.nonEmpty()
+            .and(AlienValidator.pattern("[a-z]+", "Lowercase only"))
+            .and(AlienValidator.pattern(".{3,}", "At least 3 characters"));
+        
+        // Valid
+        ParseResult<Expression> result1 = RegeReader.parse("τ[hello]", true, strict);
+        assertTrue(result1.isSuccess());
+        
+        // Invalid: too short
+        ParseResult<Expression> result2 = RegeReader.parse("τ[ab]", true, strict);
+        assertTrue(result2.isFailure());
+        
+        // Invalid: not lowercase
+        ParseResult<Expression> result3 = RegeReader.parse("τ[HELLO]", true, strict);
+        assertTrue(result3.isFailure());
+    }
+    
+    @Test
+    void testAlienValidatorErrorPosition() {
+        AlienValidator validator = AlienValidator.pattern("[a-z]+", "Lowercase only");
+        
+        ParseResult<Expression> result = RegeReader.parse("τ[HELLO]", true, validator);
+        
+        assertTrue(result.isFailure());
+        if (result instanceof ParseResult.Failure<Expression> failure) {
+            ParseError error = failure.errors().get(0);
+            
+            // Error should point to the token value (inside brackets)
+            assertTrue(error.range().start().column() > 1); // After 'τ['
+            assertNotNull(error.message());
+        }
+    }
+    
+    @Test
+    void testAlienValidatorWithComplexExpression() {
+        AlienValidator lowercase = AlienValidator.pattern("[a-z]+", "Lowercase only");
+        
+        // Valid complex expression
+        ParseResult<Expression> result1 = RegeReader.parse(
+            "(τ[hello]|τ[world])*",
+            true,
+            lowercase
+        );
+        assertTrue(result1.isSuccess());
+        
+        // Invalid: one token fails validation
+        ParseResult<Expression> result2 = RegeReader.parse(
+            "(τ[hello]|τ[WORLD])*",
+            true,
+            lowercase
+        );
+        assertTrue(result2.isFailure());
+    }
+    
+    @Test
+    void testAlienValidatorCustom() {
+        // Custom validator: balanced parentheses
+        AlienValidator balanced = (content, range) -> {
+            int depth = 0;
+            for (char c : content.toCharArray()) {
+                if (c == '(') depth++;
+                if (c == ')') depth--;
+                if (depth < 0) {
+                    return new ParseResult.Failure<>(
+                        java.util.List.of(new ParseError(range, "Unbalanced parentheses")),
+                        content
+                    );
+                }
+            }
+            if (depth != 0) {
+                return new ParseResult.Failure<>(
+                    java.util.List.of(new ParseError(range, "Unbalanced parentheses")),
+                    content
+                );
+            }
+            return new ParseResult.Success<>(content);
+        };
+        
+        // Valid
+        ParseResult<Expression> result1 = RegeReader.parse("τ[(a(b)c)]", true, balanced);
+        assertTrue(result1.isSuccess());
+        
+        // Invalid
+        ParseResult<Expression> result2 = RegeReader.parse("τ[(a(b)]", true, balanced);
+        assertTrue(result2.isFailure());
+    }
 }

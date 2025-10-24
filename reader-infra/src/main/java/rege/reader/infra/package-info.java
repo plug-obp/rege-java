@@ -98,6 +98,44 @@
  * <p>{@link rege.reader.infra.Peekable} provides character-by-character parsing with lookahead:
  * 
  * <pre>{@code
+ * Peekable iter = new Peekable("hello");
+ * while (iter.hasNext()) {
+ *     char c = iter.peek();      // Lookahead without consuming
+ *     Position pos = iter.position();
+ *     iter.next();               // Consume character
+ * }
+ * }</pre>
+ * 
+ * <h3>Alien Syntax Validation</h3>
+ * <p>{@link rege.reader.infra.AlienValidator} validates embedded content with "alien syntax"
+ * (syntax unknown to the host parser). This enables compositional parsing where one parser
+ * delegates to another for embedded content:
+ * 
+ * <pre>{@code
+ * // Accept all content (default)
+ * AlienValidator permissive = AlienValidator.acceptAll();
+ * 
+ * // Validate with pattern
+ * AlienValidator lowercase = AlienValidator.pattern("[a-z]+", "Lowercase only");
+ * 
+ * // Compose validators
+ * AlienValidator strict = AlienValidator.nonEmpty()
+ *     .and(AlienValidator.pattern("[a-zA-Z0-9]+", "Alphanumeric"))
+ *     .and(customValidator);
+ * 
+ * // Use in parser
+ * ParseResult<Expression> result = parser.parse(input, strict);
+ * }</pre>
+ * 
+ * <p><b>Common Use Cases:</b>
+ * <ul>
+ *   <li>Validating embedded JSON/XML in configuration files</li>
+ *   <li>Checking mathematical expressions in template literals</li>
+ *   <li>Verifying SQL queries in string constants</li>
+ *   <li>Any domain-specific language embedded within another</li>
+ * </ul>
+ * 
+ * <h2>Usage Patterns</h2>
  * Peekable input = new Peekable("hello");
  * Position start = input.position();
  * 

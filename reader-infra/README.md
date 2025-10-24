@@ -198,6 +198,71 @@ if (input.hasNext() && input.peek() == 'h') {
 - Handles newlines (increments line, resets column)
 - Always accurate for error reporting
 
+### AlienValidator - Embedded Syntax Validation
+
+Validates content with "alien syntax" - syntax unknown to the host parser. This enables compositional parsing where one parser delegates validation of embedded content to another validator:
+
+```java
+// Accept everything (default)
+AlienValidator permissive = AlienValidator.acceptAll();
+
+// Reject empty content
+AlienValidator noEmpty = AlienValidator.nonEmpty();
+
+// Pattern-based validation
+AlienValidator lowercase = AlienValidator.pattern("[a-z]+", "Lowercase letters only");
+
+// Custom validation logic
+AlienValidator jsonValidator = (content, range) -> {
+    try {
+        parseJson(content);
+        return new ParseResult.Success<>(content);
+    } catch (Exception e) {
+        return new ParseResult.Failure<>(
+            List.of(new ParseError(range, "Invalid JSON: " + e.getMessage())),
+            content
+        );
+    }
+};
+```
+
+**Composition:**
+
+```java
+// Both validators must succeed
+AlienValidator strict = AlienValidator.nonEmpty()
+    .and(AlienValidator.pattern("[a-zA-Z0-9]+", "Alphanumeric only"))
+    .and(customValidator);
+
+// Either validator can succeed
+AlienValidator lenient = jsonValidator.or(xmlValidator);
+```
+
+**Common use cases:**
+- Validating embedded JSON/XML in configuration files
+- Checking mathematical expressions in template literals
+- Verifying SQL queries in string constants
+- Any domain-specific language embedded within another
+
+**Integration with parsers:**
+
+```java
+public static ParseResult<Token> parseToken(String input, AlienValidator validator) {
+    // ... parse token structure ...
+    
+    // Validate token content
+    Range contentRange = new Range(contentStart, contentEnd);
+    ParseResult<String> validationResult = validator.validate(tokenValue, contentRange);
+    
+    if (validationResult instanceof ParseResult.Failure<String> failure) {
+        errors.addAll(failure.errors());  // Collect validation errors
+        return null;
+    }
+    
+    return new ParseResult.Success<>(new Token(tokenValue));
+}
+```
+
 ## Building a Parser
 
 Complete example of a simple parser:
