@@ -1,7 +1,6 @@
 package rege.syntax;
 
 import rege.syntax.model.*;
-import java.util.Iterator;
 
 /**
  * Reader for parsing regular expressions from text format.
@@ -259,51 +258,5 @@ public class RegeReader {
         }
         
         return token.toString();
-    }
-    
-    /**
-     * Peekable iterator wrapper for character input.
-     */
-    public static class Peekable {
-        private final Iterator<Character> iterator;
-        private Character peek;
-        private boolean done;
-        
-        public Peekable(String input) {
-            this.iterator = input.chars()
-                .mapToObj(c -> (char) c)
-                .iterator();
-            advance();
-        }
-        
-        private void advance() {
-            if (iterator.hasNext()) {
-                peek = iterator.next();
-                done = false;
-            } else {
-                peek = null;
-                done = true;
-            }
-        }
-        
-        public char next() {
-            if (done) {
-                throw new IllegalStateException("No more characters");
-            }
-            char current = peek;
-            advance();
-            return current;
-        }
-        
-        public char peek() {
-            if (done) {
-                throw new IllegalStateException("No more characters");
-            }
-            return peek;
-        }
-        
-        public boolean hasNext() {
-            return !done;
-        }
     }
 }

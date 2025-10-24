@@ -2,9 +2,6 @@ package rege.syntax;
 
 import rege.syntax.model.*;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-
 /**
  * Parser for regular expressions that produces LEFT-ASSOCIATIVE parse trees.
  * 
@@ -295,38 +292,6 @@ public class RegeReaderLeft {
     private void eatSpace(Peekable input) {
         while (input.hasNext() && Character.isWhitespace(input.peek())) {
             input.next();
-        }
-    }
-    
-    /**
-     * Peekable character iterator.
-     */
-    private static class Peekable implements Iterator<Character> {
-        private final String input;
-        private int position = 0;
-        
-        Peekable(String input) {
-            this.input = input;
-        }
-        
-        @Override
-        public boolean hasNext() {
-            return position < input.length();
-        }
-        
-        @Override
-        public Character next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-            return input.charAt(position++);
-        }
-        
-        public char peek() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-            return input.charAt(position);
         }
     }
 }

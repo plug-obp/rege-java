@@ -171,10 +171,27 @@
  *   <li>∪ (U+222A, UNION) - alternative to |</li>
  * </ul>
  * 
+ * <h2>Utilities</h2>
+ * 
+ * <h3>Peekable</h3>
+ * <p>{@link rege.syntax.Peekable} is a lightweight character iterator with
+ * lookahead capability. Both parsers use this utility to implement one-character
+ * lookahead parsing without backtracking.
+ * 
+ * <p><b>Example:</b>
+ * <pre>{@code
+ * Peekable input = new Peekable("abc");
+ * if (input.hasNext() && input.peek() == 'a') {
+ *     char ch = input.next(); // consume 'a'
+ *     // now input is positioned at 'b'
+ * }
+ * }</pre>
+ * 
  * @see rege.syntax.RegeReader
  * @see rege.syntax.RegeReaderLeft
  * @see rege.syntax.PrettyPrinter
  * @see rege.syntax.Simplifier
+ * @see rege.syntax.Peekable
  * @see rege.syntax.model
  */
 package rege.syntax;
