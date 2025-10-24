@@ -15,9 +15,16 @@
  * 
  * <p><b>Example:</b>
  * <pre>{@code
- * Expression expr = RegeReader.readExpression("τ[a]τ[b]τ[c]");
- * // Produces: Concatenation(Token("a"), Concatenation(Token("b"), Token("c")))
- * // Structure: a⋅(b⋅c)  [right-associative]
+ * ParseResult result = RegeReader.parse("τ[a]τ[b]τ[c]");
+ * switch (result) {
+ *     case ParseResult.Success(var expr) -> {
+ *         // Produces: Concatenation(Token("a"), Concatenation(Token("b"), Token("c")))
+ *         // Structure: a⋅(b⋅c)  [right-associative]
+ *     }
+ *     case ParseResult.Failure(var errors, var source) -> {
+ *         errors.forEach(e -> System.err.println(e.formatWithSource(source)));
+ *     }
+ * }
  * }</pre>
  * 
  * <h3>RegeReaderLeft (Left-Associative)</h3>
@@ -26,9 +33,16 @@
  * 
  * <p><b>Example:</b>
  * <pre>{@code
- * Expression expr = RegeReaderLeft.readExpression("τ[a]τ[b]τ[c]");
- * // Produces: Concatenation(Concatenation(Token("a"), Token("b")), Token("c"))
- * // Structure: (a⋅b)⋅c  [left-associative]
+ * ParseResult result = RegeReaderLeft.parse("τ[a]τ[b]τ[c]");
+ * switch (result) {
+ *     case ParseResult.Success(var expr) -> {
+ *         // Produces: Concatenation(Concatenation(Token("a"), Token("b")), Token("c"))
+ *         // Structure: (a⋅b)⋅c  [left-associative]
+ *     }
+ *     case ParseResult.Failure(var errors, var source) -> {
+ *         errors.forEach(e -> System.err.println(e.formatWithSource(source)));
+ *     }
+ * }
  * }</pre>
  * 
  * <h3>Grammar</h3>
@@ -88,12 +102,89 @@
  * 
  * <pre>{@code
  * // Smart mode (default)
- * Expression expr1 = RegeReader.readExpression("ε|ε");
- * // Returns: Epsilon (simplified via A|A = A)
+ * ParseResult result1 = RegeReader.parse("ε|ε");
+ * // Success with: Epsilon (simplified via A|A = A)
  * 
  * // Raw mode (no simplification)
- * Expression expr2 = RegeReader.readExpression("ε|ε", false);
- * // Returns: Union(Epsilon, Epsilon)
+ * ParseResult result2 = RegeReader.parse("ε|ε", false);
+ * // Success with: Union(Epsilon, Epsilon)
+ * }</pre>
+ * 
+ * <h2>Error Handling</h2>
+ * 
+ * <p>Both parsers return {@link rege.syntax.ParseResult}, a sealed interface
+ * providing type-safe error handling with precise position tracking.
+ * 
+ * <h3>ParseResult (Result Monad)</h3>
+ * <p>{@link rege.syntax.ParseResult} uses the Result Monad pattern for
+ * type-safe error handling. It's a sealed interface with two cases:
+ * <ul>
+ *   <li>{@link rege.syntax.ParseResult.Success} - Contains the parsed expression</li>
+ *   <li>{@link rege.syntax.ParseResult.Failure} - Contains error list and source</li>
+ * </ul>
+ * 
+ * <p><b>Pattern Matching (Recommended):</b>
+ * <pre>{@code
+ * ParseResult result = RegeReader.parse("τ[invalid");
+ * switch (result) {
+ *     case ParseResult.Success(var expr) -> 
+ *         System.out.println("Parsed: " + expr);
+ *     case ParseResult.Failure(var errors, var source) -> {
+ *         System.err.println("Parse failed with " + errors.size() + " errors:");
+ *         errors.forEach(e -> System.err.println(e.formatWithSource(source)));
+ *     }
+ * }
+ * }</pre>
+ * 
+ * <p><b>Exception-Based (for legacy code):</b>
+ * <pre>{@code
+ * try {
+ *     Expression expr = RegeReader.parse("τ[invalid").orElseThrow();
+ * } catch (ParseException e) {
+ *     System.err.println(e.getMessage());
+ * }
+ * }</pre>
+ * 
+ * <p><b>Functional Composition:</b>
+ * <pre>{@code
+ * ParseResult result = RegeReader.parse(input)
+ *     .map(Expression::simplify)
+ *     .map(expr -> expr.star());
+ * }</pre>
+ * 
+ * <h3>Position Tracking</h3>
+ * <p>{@link rege.syntax.Position} tracks locations in source text with:
+ * <ul>
+ *   <li><b>line</b> - 1-based line number for human readability</li>
+ *   <li><b>column</b> - 1-based column number for human readability</li>
+ *   <li><b>offset</b> - 0-based character offset for programmatic access</li>
+ * </ul>
+ * 
+ * <h3>Error Messages</h3>
+ * <p>{@link rege.syntax.ParseError} provides detailed error information:
+ * <ul>
+ *   <li>Precise position range in source text</li>
+ *   <li>Human-readable error message</li>
+ *   <li>Severity level (ERROR, WARNING, INFO, HINT)</li>
+ *   <li>Optional error code for categorization</li>
+ *   <li>LSP (Language Server Protocol) compatibility</li>
+ * </ul>
+ * 
+ * <p><b>Example Error Output:</b>
+ * <pre>
+ * error at 1:8-1:15: Unclosed token: missing ']'
+ *   τ[hello
+ *   ^^^^^^^
+ * </pre>
+ * 
+ * <h3>Backward Compatibility</h3>
+ * <p>Legacy methods are preserved but deprecated:
+ * <pre>{@code
+ * // Old API (deprecated, returns null on error)
+ * Expression expr = RegeReader.readExpression("τ[a]");
+ * 
+ * // New API (recommended, returns ParseResult)
+ * ParseResult result = RegeReader.parse("τ[a]");
  * }</pre>
  * 
  * <h2>Pretty Printer</h2>
@@ -201,20 +292,27 @@
  * 
  * <h3>Peekable</h3>
  * <p>{@link rege.syntax.Peekable} is a lightweight character iterator with
- * lookahead capability. Both parsers use this utility to implement one-character
- * lookahead parsing without backtracking.
+ * lookahead capability and position tracking. Both parsers use this utility
+ * to implement one-character lookahead parsing without backtracking.
  * 
  * <p><b>Example:</b>
  * <pre>{@code
  * Peekable input = new Peekable("abc");
+ * Position start = input.position();
  * if (input.hasNext() && input.peek() == 'a') {
  *     char ch = input.next(); // consume 'a'
- *     // now input is positioned at 'b'
+ *     Range range = input.rangeFrom(start);
+ *     // range tracks position of consumed character
  * }
  * }</pre>
  * 
  * @see rege.syntax.RegeReader
  * @see rege.syntax.RegeReaderLeft
+ * @see rege.syntax.ParseResult
+ * @see rege.syntax.ParseError
+ * @see rege.syntax.Position
+ * @see rege.syntax.Range
+ * @see rege.syntax.ParseException
  * @see rege.syntax.PrettyPrinter
  * @see rege.syntax.Simplifier
  * @see rege.syntax.Peekable

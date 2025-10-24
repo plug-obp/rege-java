@@ -140,7 +140,118 @@ Expression simplified = complex.accept(simplifier, null);
 
 ---
 
-## 📖 Parsers
+## � Error Handling
+
+Both parsers return **`ParseResult`**, a type-safe Result Monad that enforces proper error handling through pattern matching.
+
+### ParseResult (Sealed Interface)
+
+```java
+sealed interface ParseResult {
+    record Success(Expression expression) {}
+    record Failure(List<ParseError> errors, String source) {}
+}
+```
+
+### Usage Patterns
+
+#### Pattern Matching (Recommended)
+
+```java
+ParseResult result = RegeReader.parse("τ[a] | τ[b]");
+switch (result) {
+    case ParseResult.Success(var expr) -> 
+        System.out.println("Parsed: " + expr);
+    case ParseResult.Failure(var errors, var source) -> {
+        System.err.println("Parse failed with " + errors.size() + " errors:");
+        errors.forEach(e -> System.err.println(e.formatWithSource(source)));
+    }
+}
+```
+
+#### Exception-Based (for Legacy Code)
+
+```java
+try {
+    Expression expr = RegeReader.parse("τ[invalid").orElseThrow();
+} catch (ParseException e) {
+    System.err.println(e.getMessage());
+    for (ParseError error : e.getErrors()) {
+        System.err.println(error.formatWithSource(e.getSource()));
+    }
+}
+```
+
+#### Functional Composition
+
+```java
+ParseResult result = RegeReader.parse(input)
+    .map(Expression::simplify)
+    .map(expr -> expr.star())
+    .flatMap(expr -> validateSemantics(expr));
+```
+
+#### Optional-Based
+
+```java
+Optional<Expression> opt = RegeReader.parse(input).toOptional();
+opt.ifPresent(expr -> System.out.println("Success: " + expr));
+```
+
+### Position Tracking
+
+```java
+public record Position(int line, int column, int offset) {}
+public record Range(Position start, Position end) {}
+```
+
+- **line**: 1-based line number (human-readable)
+- **column**: 1-based column number (human-readable)
+- **offset**: 0-based character offset (programmatic access)
+
+### Error Messages
+
+```java
+public record ParseError(
+    Range range,
+    String message,
+    Severity severity,  // ERROR, WARNING, INFO, HINT
+    Optional<String> code
+) {}
+```
+
+**Example Error Output**:
+```
+error at 1:8-1:15: Unclosed token: missing ']'
+  τ[hello
+  ^^^^^^^
+```
+
+### Common Error Types
+
+| Error | Trigger | Example |
+|-------|---------|---------|
+| Unclosed token | Missing `]` after `τ[` | `τ[hello` |
+| Unclosed parenthesis | Missing `)` after `(` | `(τ[a]` |
+| Expected expression | Empty after operator | `τ[a]\|` |
+| Unexpected character | Invalid character | `@` |
+| Unexpected trailing | Characters after expression | `τ[a])` |
+
+### Backward Compatibility
+
+```java
+// ⚠️ Deprecated API (returns null on error)
+Expression expr = RegeReader.readExpression("τ[a]");  
+
+// ✅ New API (recommended, returns ParseResult)
+ParseResult result = RegeReader.parse("τ[a]");
+```
+
+**Test Coverage**: 102 error handling tests
+
+---
+
+## �📖 Parsers
 
 ### RegeReader (Right-Associative)
 
@@ -201,21 +312,31 @@ Token values support escape sequences for special characters:
 
 ```java
 // With smart constructors (default)
-Expression expr = RegeReader.readExpression("τ[hello]|ϵ");
+ParseResult result = RegeReader.parse("τ[hello]|ϵ");
+Expression expr = result.orElseThrow();
 
 // Token with special characters (escape sequences processed)
-Expression token = RegeReader.readExpression("τ[hello\\nworld]");
+ParseResult tokenResult = RegeReader.parse("τ[hello\\nworld]");
+Expression token = tokenResult.orElseThrow();
 // token = Token("hello\nworld") - contains actual newline
 
 // Without smart constructors
-Expression raw = RegeReader.readExpression("∅*", false);
-// raw = KleeneStar(Empty)
+ParseResult raw = RegeReader.parse("∅*", false);
+// raw.orElseThrow() = KleeneStar(Empty)
 
-Expression smart = RegeReader.readExpression("∅*", true);
-// smart = Epsilon (simplified)
+ParseResult smart = RegeReader.parse("∅*", true);
+// smart.orElseThrow() = Epsilon (simplified)
+
+// Pattern matching for error handling
+ParseResult errorResult = RegeReader.parse("τ[unclosed");
+switch (errorResult) {
+    case ParseResult.Success(var e) -> System.out.println(e);
+    case ParseResult.Failure(var errors, var source) -> 
+        errors.forEach(err -> System.err.println(err.formatWithSource(source)));
+}
 ```
 
-**Test Coverage**: 60+ tests
+**Test Coverage**: 82+ tests (including error handling)
 
 ---
 

@@ -6,13 +6,15 @@
 
 ## Executive Summary
 
-The `rege-java` project implements a **mathematically rigorous regular expression framework** with **sealed type hierarchies**, **visitor-based extensibility**, and **Brzozowski derivative semantics**. The architecture demonstrates **excellent separation of concerns**, **strong type safety**, and **comprehensive testing** (298 tests, all passing ✅).
+The `rege-java` project implements a **mathematically rigorous regular expression framework** with **sealed type hierarchies**, **visitor-based extensibility**, and **Brzozowski derivative semantics**. The architecture demonstrates **excellent separation of concerns**, **strong type safety**, and **comprehensive testing** (426 tests, all passing ✅).
 
 **Recent Major Enhancements:**
+- ✅ **Result Monad Error Handling**: Type-safe parse results with precise position tracking and LSP compatibility
 - ✅ **Standard Precedence Implementation**: Fixed parser precedence to match standard regex (star > concat > union)
 - ✅ **Dual-Associativity Parsers**: RegeReader (right-associative) and RegeReaderLeft (left-associative)
 - ✅ **Escape Sequence Consistency**: Unified escape handling across parsers and PrettyPrinter
 - ✅ **Roundtrip Property**: Verified `parse(print(expr)) == expr` for all expressions
+- ✅ **Empty Token Prohibition**: Mathematical soundness enforced through empty string validation
 
 ---
 
@@ -126,6 +128,98 @@ Maintained two parsers with **different associativity** but **same precedence**:
 - `RegeReaderComparisonTest` validates semantic equivalence
 - 5 tests ensure both parsers produce equivalent expressions
 - Simplifier can normalize both structures
+
+### Result Monad Error Handling (Type-Safe Parse Results)
+
+**Problem:**
+Original parsers returned `null` on failure, providing:
+- No error information (position, message, context)
+- No indication of what went wrong
+- Unsafe null handling requiring defensive checks
+- Poor debugging experience
+
+**Solution Implemented:**
+Comprehensive Result Monad pattern with position tracking and detailed error reporting.
+
+**Architecture:**
+
+```java
+sealed interface ParseResult {
+    record Success(Expression expression) {}
+    record Failure(List<ParseError> errors, String source) {}
+}
+
+record Position(int line, int column, int offset) {}
+record Range(Position start, Position end) {}
+record ParseError(Range range, String message, Severity severity, Optional<String> code) {}
+class ParseException extends Exception {}
+```
+
+**Key Design Decisions:**
+
+1. **Sealed Interface**: Enforces exhaustive pattern matching at compile time
+2. **Position Tracking**: 1-based line/column (human-readable) + 0-based offset (programmatic)
+3. **Range-Based Errors**: Precise error locations with start/end positions
+4. **LSP Compatibility**: Error structure matches Language Server Protocol
+5. **Backward Compatibility**: Deprecated `readExpression()` methods preserved
+
+**Enhanced Peekable:**
+- Tracks line, column, offset as characters consumed
+- Handles newlines (increments line, resets column)
+- Methods: `position()`, `rangeFrom(start)`, `rangeHere()`, `source()`
+
+**Enhanced Parsers:**
+Both `RegeReader` and `RegeReaderLeft` now:
+- Return `ParseResult` instead of nullable `Expression`
+- Collect errors with precise positions during parsing
+- Provide detailed error messages:
+  - "Expected expression after union operator '|'"
+  - "Unclosed token: missing ']'"
+  - "Unexpected character '@'"
+  - "Unexpected trailing characters"
+
+**Usage Patterns:**
+
+```java
+// Pattern matching (recommended)
+ParseResult result = RegeReader.parse("τ[invalid");
+switch (result) {
+    case ParseResult.Success(var expr) -> use(expr);
+    case ParseResult.Failure(var errors, var source) -> 
+        errors.forEach(e -> log(e.formatWithSource(source)));
+}
+
+// Exception-based (for legacy code)
+try {
+    Expression expr = RegeReader.parse("τ[invalid").orElseThrow();
+} catch (ParseException e) {
+    System.err.println(e.getMessage());
+}
+
+// Functional composition
+ParseResult result = RegeReader.parse(input)
+    .map(Expression::simplify)
+    .flatMap(expr -> validateSemantics(expr));
+```
+
+**Impact:**
+- ✅ Type-safe error handling enforced by compiler
+- ✅ Rich error messages with source context
+- ✅ Precise position tracking for IDE integration
+- ✅ LSP-compatible error structure
+- ✅ Functional methods: `map()`, `flatMap()`, `orElse()`, `orElseThrow()`
+- ✅ Full backward compatibility maintained
+- ✅ 102 new error handling tests added
+
+**Test Coverage:**
+- **PositionTest** (13 tests): Position validation and comparison
+- **RangeTest** (14 tests): Range validation and operations
+- **ParseErrorTest** (17 tests): Error construction and formatting
+- **ParseResultTest** (18 tests): Success/Failure, pattern matching, composition
+- **ParseExceptionTest** (5 tests): Exception behavior and immutability
+- **PeekableTest** (13 tests): Position tracking during parsing
+- **RegeReaderErrorTest** (22 tests): Error reporting for right-associative parser
+- **RegeReaderLeftErrorTest** (23 tests): Error reporting for left-associative parser
 
 ### Documentation Enhancements
 
