@@ -1,19 +1,19 @@
-package rege.syntax;
+package rege.reader.infra;
 
 import java.util.List;
 import java.util.Objects;
 
 /**
- * Exception thrown when attempting to extract an expression from a failed parse result.
+ * Exception thrown when attempting to extract a result from a failed parse.
  * 
- * <p>This exception is thrown by {@link ParseResult#orElseThrow()} when the result is a
- * {@link ParseResult.Failure}. It contains all parse errors and the source text.
+ * <p>This exception is thrown by {@code orElseThrow()} methods when the result is a failure.
+ * It contains all parse errors and the source text.
  * 
  * <p><b>Usage:</b>
  * <pre>{@code
  * try {
- *     Expression expr = RegeReader.parse(input).orElseThrow();
- *     // use expr
+ *     T result = parseResult.orElseThrow();
+ *     // use result
  * } catch (ParseException e) {
  *     System.err.println(e.getMessage());
  *     for (ParseError error : e.getErrors()) {

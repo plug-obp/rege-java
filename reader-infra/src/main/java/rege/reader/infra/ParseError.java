@@ -1,4 +1,4 @@
-package rege.syntax;
+package rege.reader.infra;
 
 import java.util.Objects;
 import java.util.Optional;

@@ -1,5 +1,6 @@
 package rege.syntax;
 
+import rege.reader.infra.*;
 import rege.syntax.model.*;
 
 /**
@@ -65,7 +66,7 @@ public class RegeReaderLeft {
      * @param input the string to parse
      * @return parse result containing either the expression or errors
      */
-    public static ParseResult parse(String input) {
+    public static ParseResult<Expression> parse(String input) {
         return parse(input, true);
     }
     
@@ -76,19 +77,19 @@ public class RegeReaderLeft {
      * @param isSmart whether to use smart constructors that apply simplification rules
      * @return parse result containing either the expression or errors
      */
-    public static ParseResult parse(String input, boolean isSmart) {
+    public static ParseResult<Expression> parse(String input, boolean isSmart) {
         RegeReaderLeft reader = new RegeReaderLeft(isSmart);
         Peekable peekable = new Peekable(input);
         Expression expr = reader.parseExpression(peekable);
         
         if (!reader.errors.isEmpty()) {
-            return new ParseResult.Failure(reader.errors, input);
+            return new ParseResult.Failure<>(reader.errors, input);
         }
         
         if (expr == null) {
             // No errors but failed to parse - generic error
             reader.error(peekable.rangeHere(), "Failed to parse expression");
-            return new ParseResult.Failure(reader.errors, input);
+            return new ParseResult.Failure<>(reader.errors, input);
         }
         
         // Check for trailing characters
@@ -100,10 +101,10 @@ public class RegeReaderLeft {
                 peekable.next();
             }
             reader.error(peekable.rangeFrom(start), "Unexpected trailing characters");
-            return new ParseResult.Failure(reader.errors, input);
+            return new ParseResult.Failure<>(reader.errors, input);
         }
         
-        return new ParseResult.Success(expr);
+        return new ParseResult.Success<>(expr);
     }
     
     /**

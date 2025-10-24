@@ -1,4 +1,4 @@
-package rege.syntax;
+package rege.reader.infra;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -8,8 +8,8 @@ import java.util.NoSuchElementException;
  * Allows looking ahead at the next character without consuming it,
  * and tracks line, column, and offset for error reporting.
  * 
- * <p>This utility class is used by both {@link RegeReader} and {@link RegeReaderLeft}
- * to parse regular expression syntax with one-character lookahead.
+ * <p>This utility class can be used by parsers to implement one-character
+ * lookahead parsing with precise position tracking for error messages.
  * 
  * <p>Example usage:
  * <pre>{@code

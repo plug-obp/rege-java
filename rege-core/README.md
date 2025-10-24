@@ -140,94 +140,66 @@ Expression simplified = complex.accept(simplifier, null);
 
 ---
 
-## � Error Handling
+## ⚡ Error Handling
 
-Both parsers return **`ParseResult`**, a type-safe Result Monad that enforces proper error handling through pattern matching.
+Both parsers return **`ParseResult<Expression>`**, a type-safe Result Monad from the [`reader-infra`](../reader-infra) module that enforces proper error handling through pattern matching.
 
-### ParseResult (Sealed Interface)
+### Quick Example
 
 ```java
-sealed interface ParseResult {
-    record Success(Expression expression) {}
-    record Failure(List<ParseError> errors, String source) {}
+ParseResult<Expression> result = RegeReader.parse("τ[a] | τ[b]");
+switch (result) {
+    case ParseResult.Success<Expression> s -> 
+        System.out.println("Parsed: " + s.value());
+    case ParseResult.Failure<Expression> f -> 
+        System.err.println(f.formatErrors());
 }
 ```
+
+### Core Components
+
+The error handling infrastructure lives in the [`reader-infra`](../reader-infra) module:
+
+- **`ParseResult<T>`**: Type-safe Result Monad with `Success<T>` and `Failure<T>`
+- **`ParseError`**: Detailed error information with severity levels (ERROR, WARNING, INFO, HINT)
+- **`ParseException`**: Bridge to exception-based error handling
+- **`Position`** & **`Range`**: Source location tracking (1-based human, 0-based programmatic)
+- **`Peekable`**: Character iterator with lookahead and automatic position tracking
 
 ### Usage Patterns
 
-#### Pattern Matching (Recommended)
-
 ```java
-ParseResult result = RegeReader.parse("τ[a] | τ[b]");
-switch (result) {
-    case ParseResult.Success(var expr) -> 
-        System.out.println("Parsed: " + expr);
-    case ParseResult.Failure(var errors, var source) -> {
-        System.err.println("Parse failed with " + errors.size() + " errors:");
-        errors.forEach(e -> System.err.println(e.formatWithSource(source)));
-    }
-}
-```
+// Functional composition
+Optional<String> output = RegeReader.parse(input)
+    .map(Expression::simplify)
+    .map(Expression::toString)
+    .toOptional();
 
-#### Exception-Based (for Legacy Code)
-
-```java
+// Exception-based (for legacy code)
 try {
     Expression expr = RegeReader.parse("τ[invalid").orElseThrow();
 } catch (ParseException e) {
-    System.err.println(e.getMessage());
-    for (ParseError error : e.getErrors()) {
-        System.err.println(error.formatWithSource(e.getSource()));
-    }
+    e.errors().forEach(err -> System.err.println(err.message()));
+}
+
+// Optional-based
+RegeReader.parse(input).toOptional().ifPresent(System.out::println);
+```
+
+### Error Formatting
+
+```java
+ParseResult<Expression> result = RegeReader.parse("τ[hello");
+if (result instanceof ParseResult.Failure<Expression> f) {
+    System.err.println(f.formatErrors());
+    // Output:
+    // ERROR at line 1, column 8: Unclosed token: missing ']'
+    //   τ[hello
+    //   ^^^^^^^
 }
 ```
 
-#### Functional Composition
-
-```java
-ParseResult result = RegeReader.parse(input)
-    .map(Expression::simplify)
-    .map(expr -> expr.star())
-    .flatMap(expr -> validateSemantics(expr));
-```
-
-#### Optional-Based
-
-```java
-Optional<Expression> opt = RegeReader.parse(input).toOptional();
-opt.ifPresent(expr -> System.out.println("Success: " + expr));
-```
-
-### Position Tracking
-
-```java
-public record Position(int line, int column, int offset) {}
-public record Range(Position start, Position end) {}
-```
-
-- **line**: 1-based line number (human-readable)
-- **column**: 1-based column number (human-readable)
-- **offset**: 0-based character offset (programmatic access)
-
-### Error Messages
-
-```java
-public record ParseError(
-    Range range,
-    String message,
-    Severity severity,  // ERROR, WARNING, INFO, HINT
-    Optional<String> code
-) {}
-```
-
-**Example Error Output**:
-```
-error at 1:8-1:15: Unclosed token: missing ']'
-  τ[hello
-  ^^^^^^^
-```
-
-### Common Error Types
+### Common Parse Errors
 
 | Error | Trigger | Example |
 |-------|---------|---------|
@@ -237,17 +209,9 @@ error at 1:8-1:15: Unclosed token: missing ']'
 | Unexpected character | Invalid character | `@` |
 | Unexpected trailing | Characters after expression | `τ[a])` |
 
-### Backward Compatibility
+**For complete error handling documentation, see the [`reader-infra` README](../reader-infra/README.md)**
 
-```java
-// ⚠️ Deprecated API (returns null on error)
-Expression expr = RegeReader.readExpression("τ[a]");  
-
-// ✅ New API (recommended, returns ParseResult)
-ParseResult result = RegeReader.parse("τ[a]");
-```
-
-**Test Coverage**: 102 error handling tests
+**Test Coverage**: 102 error handling tests (rege-core) + 125 infrastructure tests (reader-infra)
 
 ---
 

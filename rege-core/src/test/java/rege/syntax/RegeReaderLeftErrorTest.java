@@ -1,4 +1,5 @@
 package rege.syntax;
+import rege.reader.infra.*;
 
 import org.junit.jupiter.api.Test;
 import rege.syntax.model.Expression;
@@ -11,7 +12,7 @@ class RegeReaderLeftErrorTest {
     
     @Test
     void testSuccessfulParse() {
-        ParseResult result = RegeReaderLeft.parse("τ[a]");
+        ParseResult<Expression> result = RegeReaderLeft.parse("τ[a]");
         
         assertTrue(result.isSuccess());
         assertFalse(result.isFailure());
@@ -19,7 +20,7 @@ class RegeReaderLeftErrorTest {
     
     @Test
     void testSuccessfulParsePattern() {
-        ParseResult result = RegeReaderLeft.parse("τ[a]|τ[b]");
+        ParseResult<Expression> result = RegeReaderLeft.parse("τ[a]|τ[b]");
         
         switch (result) {
             case ParseResult.Success(var expr) -> assertNotNull(expr);
@@ -36,7 +37,7 @@ class RegeReaderLeftErrorTest {
     
     @Test
     void testOrElseThrowFailure() {
-        ParseResult result = RegeReaderLeft.parse("τ[unclosed");
+        ParseResult<Expression> result = RegeReaderLeft.parse("τ[unclosed");
         
         ParseException ex = assertThrows(ParseException.class, result::orElseThrow);
         assertFalse(ex.getErrors().isEmpty());
@@ -44,81 +45,81 @@ class RegeReaderLeftErrorTest {
     
     @Test
     void testUnclosedToken() {
-        ParseResult result = RegeReaderLeft.parse("τ[hello");
+        ParseResult<Expression> result = RegeReaderLeft.parse("τ[hello");
         
         assertTrue(result.isFailure());
-        ParseResult.Failure failure = (ParseResult.Failure) result;
+        ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
         assertEquals(1, failure.errors().size());
         assertTrue(failure.errors().get(0).message().contains("Unclosed token"));
     }
     
     @Test
     void testMissingBracket() {
-        ParseResult result = RegeReaderLeft.parse("τhello]");
+        ParseResult<Expression> result = RegeReaderLeft.parse("τhello]");
         
         assertTrue(result.isFailure());
-        ParseResult.Failure failure = (ParseResult.Failure) result;
+        ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
         assertTrue(failure.errors().get(0).message().contains("Expected '['"));
     }
     
     @Test
     void testUnclosedParenthesis() {
-        ParseResult result = RegeReaderLeft.parse("(τ[a]");
+        ParseResult<Expression> result = RegeReaderLeft.parse("(τ[a]");
         
         assertTrue(result.isFailure());
-        ParseResult.Failure failure = (ParseResult.Failure) result;
+        ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
         assertTrue(failure.errors().get(0).message().contains("Unclosed parenthesis"));
     }
     
     @Test
     void testUnexpectedClosingParenthesis() {
-        ParseResult result = RegeReaderLeft.parse("τ[a])");
+        ParseResult<Expression> result = RegeReaderLeft.parse("τ[a])");
         
         assertTrue(result.isFailure());
-        ParseResult.Failure failure = (ParseResult.Failure) result;
+        ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
         assertTrue(failure.errors().get(0).message().contains("Unexpected trailing"));
     }
     
     @Test
     void testUnexpectedCharacter() {
-        ParseResult result = RegeReaderLeft.parse("@");
+        ParseResult<Expression> result = RegeReaderLeft.parse("@");
         
         assertTrue(result.isFailure());
-        ParseResult.Failure failure = (ParseResult.Failure) result;
+        ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
         assertTrue(failure.errors().get(0).message().contains("Unexpected character"));
     }
     
     @Test
     void testEmptyInput() {
-        ParseResult result = RegeReaderLeft.parse("");
+        ParseResult<Expression> result = RegeReaderLeft.parse("");
         
         assertTrue(result.isFailure());
     }
     
     @Test
     void testMissingRightOperandUnion() {
-        ParseResult result = RegeReaderLeft.parse("τ[a]|");
+        ParseResult<Expression> result = RegeReaderLeft.parse("τ[a]|");
         
         assertTrue(result.isFailure());
-        ParseResult.Failure failure = (ParseResult.Failure) result;
+        ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
         assertTrue(failure.errors().get(0).message().contains("after union operator"));
     }
     
     @Test
     void testMissingRightOperandConcat() {
-        ParseResult result = RegeReaderLeft.parse("τ[a].");
+        ParseResult<Expression> result = RegeReaderLeft.parse("τ[a].");
         
         assertTrue(result.isFailure());
-        ParseResult.Failure failure = (ParseResult.Failure) result;
+        ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
         assertTrue(failure.errors().get(0).message().contains("after concatenation operator"));
     }
     
     @Test
     void testErrorPositionTracking() {
-        ParseResult result = RegeReaderLeft.parse("τ[a] τ[unclosed");
+        ParseResult<Expression> result = RegeReaderLeft.parse("τ[a] τ[unclosed");
         
         assertTrue(result.isFailure());
-        ParseResult.Failure failure = (ParseResult.Failure) result;
+        ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
         ParseError error = failure.errors().get(0);
         
         // Error should be somewhere in the input
@@ -128,7 +129,7 @@ class RegeReaderLeftErrorTest {
     
     @Test
     void testFormatErrorsWithSource() {
-        ParseResult result = RegeReaderLeft.parse("τ[hello");
+        ParseResult<Expression> result = RegeReaderLeft.parse("τ[hello");
         
         String formatted = result.formatErrors();
         assertFalse(formatted.isEmpty());
@@ -138,14 +139,14 @@ class RegeReaderLeftErrorTest {
     
     @Test
     void testToOptionalSuccess() {
-        ParseResult result = RegeReaderLeft.parse("τ[a]");
+        ParseResult<Expression> result = RegeReaderLeft.parse("τ[a]");
         
         assertTrue(result.toOptional().isPresent());
     }
     
     @Test
     void testToOptionalFailure() {
-        ParseResult result = RegeReaderLeft.parse("τ[unclosed");
+        ParseResult<Expression> result = RegeReaderLeft.parse("τ[unclosed");
         
         assertFalse(result.toOptional().isPresent());
     }
@@ -166,7 +167,7 @@ class RegeReaderLeftErrorTest {
     
     @Test
     void testMapSuccess() {
-        ParseResult result = RegeReaderLeft.parse("τ[a]");
+        ParseResult<Expression> result = RegeReaderLeft.parse("τ[a]");
         ParseResult mapped = result.map(expr -> expr.star());
         
         assertTrue(mapped.isSuccess());
@@ -174,7 +175,7 @@ class RegeReaderLeftErrorTest {
     
     @Test
     void testMapFailure() {
-        ParseResult result = RegeReaderLeft.parse("τ[unclosed");
+        ParseResult<Expression> result = RegeReaderLeft.parse("τ[unclosed");
         ParseResult mapped = result.map(expr -> expr.star());
         
         assertTrue(mapped.isFailure());
@@ -200,10 +201,10 @@ class RegeReaderLeftErrorTest {
     @Test
     void testLeftAssociativityPreserved() {
         // Verify left-associativity is maintained with new API (using isSmart=false)
-        ParseResult result = RegeReaderLeft.parse("τ[a]|τ[b]|τ[c]", false);
+        ParseResult<Expression> result = RegeReaderLeft.parse("τ[a]|τ[b]|τ[c]", false);
         
         assertTrue(result.isSuccess());
-        Expression expr = ((ParseResult.Success) result).expression();
+        Expression expr = ((ParseResult.Success<Expression>) result).value();
         
         // Should be ((a|b)|c) - left associative
         assertTrue(expr instanceof rege.syntax.model.Union);

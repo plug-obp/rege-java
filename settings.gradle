@@ -1,2 +1,3 @@
 rootProject.name = 'rege-language'
+include 'reader-infra'
 include 'rege-core'

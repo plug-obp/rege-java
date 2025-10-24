@@ -1,4 +1,5 @@
 package rege.syntax;
+import rege.reader.infra.*;
 
 import org.junit.jupiter.api.Test;
 import rege.syntax.model.*;

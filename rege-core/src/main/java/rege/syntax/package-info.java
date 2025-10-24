@@ -112,70 +112,31 @@
  * 
  * <h2>Error Handling</h2>
  * 
- * <p>Both parsers return {@link rege.syntax.ParseResult}, a sealed interface
+ * <p>Both parsers return {@link rege.reader.infra.ParseResult}{@code <Expression>},
  * providing type-safe error handling with precise position tracking.
  * 
- * <h3>ParseResult (Result Monad)</h3>
- * <p>{@link rege.syntax.ParseResult} uses the Result Monad pattern for
- * type-safe error handling. It's a sealed interface with two cases:
- * <ul>
- *   <li>{@link rege.syntax.ParseResult.Success} - Contains the parsed expression</li>
- *   <li>{@link rege.syntax.ParseResult.Failure} - Contains error list and source</li>
- * </ul>
- * 
- * <p><b>Pattern Matching (Recommended):</b>
+ * <p><b>Basic Usage:</b>
  * <pre>{@code
- * ParseResult result = RegeReader.parse("τ[invalid");
+ * ParseResult<Expression> result = RegeReader.parse("τ[a]|τ[b]");
  * switch (result) {
- *     case ParseResult.Success(var expr) -> 
+ *     case ParseResult.Success<Expression>(var expr) -> 
  *         System.out.println("Parsed: " + expr);
- *     case ParseResult.Failure(var errors, var source) -> {
- *         System.err.println("Parse failed with " + errors.size() + " errors:");
+ *     case ParseResult.Failure<Expression>(var errors, var source) -> 
  *         errors.forEach(e -> System.err.println(e.formatWithSource(source)));
- *     }
  * }
  * }</pre>
  * 
- * <p><b>Exception-Based (for legacy code):</b>
- * <pre>{@code
- * try {
- *     Expression expr = RegeReader.parse("τ[invalid").orElseThrow();
- * } catch (ParseException e) {
- *     System.err.println(e.getMessage());
- * }
- * }</pre>
- * 
- * <p><b>Functional Composition:</b>
- * <pre>{@code
- * ParseResult result = RegeReader.parse(input)
- *     .map(Expression::simplify)
- *     .map(expr -> expr.star());
- * }</pre>
- * 
- * <h3>Position Tracking</h3>
- * <p>{@link rege.syntax.Position} tracks locations in source text with:
+ * <p>For complete error handling documentation, including:
  * <ul>
- *   <li><b>line</b> - 1-based line number for human readability</li>
- *   <li><b>column</b> - 1-based column number for human readability</li>
- *   <li><b>offset</b> - 0-based character offset for programmatic access</li>
+ *   <li>Result Monad pattern with {@link rege.reader.infra.ParseResult}</li>
+ *   <li>Position tracking with {@link rege.reader.infra.Position} and {@link rege.reader.infra.Range}</li>
+ *   <li>Error reporting with {@link rege.reader.infra.ParseError}</li>
+ *   <li>Exception bridge with {@link rege.reader.infra.ParseException}</li>
+ *   <li>Functional composition (map, flatMap)</li>
+ *   <li>LSP (Language Server Protocol) integration</li>
  * </ul>
  * 
- * <h3>Error Messages</h3>
- * <p>{@link rege.syntax.ParseError} provides detailed error information:
- * <ul>
- *   <li>Precise position range in source text</li>
- *   <li>Human-readable error message</li>
- *   <li>Severity level (ERROR, WARNING, INFO, HINT)</li>
- *   <li>Optional error code for categorization</li>
- *   <li>LSP (Language Server Protocol) compatibility</li>
- * </ul>
- * 
- * <p><b>Example Error Output:</b>
- * <pre>
- * error at 1:8-1:15: Unclosed token: missing ']'
- *   τ[hello
- *   ^^^^^^^
- * </pre>
+ * <p><b>See:</b> {@link rege.reader.infra} package documentation
  * 
  * <h3>Backward Compatibility</h3>
  * <p>Legacy methods are preserved but deprecated:
@@ -183,8 +144,8 @@
  * // Old API (deprecated, returns null on error)
  * Expression expr = RegeReader.readExpression("τ[a]");
  * 
- * // New API (recommended, returns ParseResult)
- * ParseResult result = RegeReader.parse("τ[a]");
+ * // New API (recommended, returns ParseResult<Expression>)
+ * ParseResult<Expression> result = RegeReader.parse("τ[a]");
  * }</pre>
  * 
  * <h2>Pretty Printer</h2>
@@ -288,34 +249,11 @@
  *   <li>∪ (U+222A, UNION) - alternative to |</li>
  * </ul>
  * 
- * <h2>Utilities</h2>
- * 
- * <h3>Peekable</h3>
- * <p>{@link rege.syntax.Peekable} is a lightweight character iterator with
- * lookahead capability and position tracking. Both parsers use this utility
- * to implement one-character lookahead parsing without backtracking.
- * 
- * <p><b>Example:</b>
- * <pre>{@code
- * Peekable input = new Peekable("abc");
- * Position start = input.position();
- * if (input.hasNext() && input.peek() == 'a') {
- *     char ch = input.next(); // consume 'a'
- *     Range range = input.rangeFrom(start);
- *     // range tracks position of consumed character
- * }
- * }</pre>
- * 
  * @see rege.syntax.RegeReader
  * @see rege.syntax.RegeReaderLeft
- * @see rege.syntax.ParseResult
- * @see rege.syntax.ParseError
- * @see rege.syntax.Position
- * @see rege.syntax.Range
- * @see rege.syntax.ParseException
  * @see rege.syntax.PrettyPrinter
  * @see rege.syntax.Simplifier
- * @see rege.syntax.Peekable
  * @see rege.syntax.model
+ * @see rege.reader.infra
  */
 package rege.syntax;
