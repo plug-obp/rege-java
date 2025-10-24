@@ -144,22 +144,13 @@ Expression simplified = complex.accept(simplifier, null);
 
 **Default parser** that produces right-associative parse trees using recursive descent.
 
-#### Grammar
+#### Grammar (Recursive Descent with Precedence)
 
 ```
-E  -> ∅ E'              # empty set
-    | ϵ E'              # epsilon
-    | τ[string] E'      # token
-    | t[string] E'      # token (alternative)
-    | (E) E'            # parentheses
-
-E' -> | E E'            # union
-    | ∪ E E'            # union (alternative)
-    | . E E'            # concatenation
-    | ⋅ E E'            # concatenation (alternative)
-    | E E'              # implicit concatenation
-    | * E'              # Kleene star
-    | ε                 # end of input
+E  -> T ('|'|'∪' T)?                    # Union (lowest precedence)
+T  -> F ('.'|'⋅' F | F)?                # Concatenation (middle precedence)  
+F  -> P '*'*                             # Kleene star (highest precedence)
+P  -> ∅ | ϵ | τ[...] | t[...] | (E)    # Primary (atoms)
 ```
 
 #### Associativity
@@ -174,14 +165,17 @@ RegeReader.readExpression("a|b|c", false)
 // → a|(b|c)  [RIGHT-associative]
 ```
 
-#### Operator Precedence (Highest to Lowest)
+#### Operator Precedence (Standard Regex - Highest to Lowest)
 
-1. **Kleene Star** (`*`) - highest precedence
-2. **Concatenation** (`.`, `⋅`, or implicit)
-3. **Union** (`|`, `∪`) - lowest precedence
+1. **Kleene Star** (`*`) - highest precedence, binds tightest
+2. **Concatenation** (`.`, `⋅`, or implicit) - middle precedence
+3. **Union** (`|`, `∪`) - lowest precedence, binds loosest
 4. **Parentheses** `()` - override precedence
 
-**Example**: `a|b.c*` parses as `a|(b⋅(c*))`, not `((a|b)⋅c)*`
+**Examples**:
+- `a|b.c*` parses as `a|(b⋅(c*))` - star binds first, then concat, then union
+- `a.b|c.d` parses as `(a⋅b)|(c⋅d)` - both concats bind before union
+- `a*b|c` parses as `((a*)⋅b)|c` - star highest, concat middle, union lowest
 
 #### Usage
 
@@ -205,9 +199,21 @@ Expression smart = RegeReader.readExpression("∅*", true);
 
 **Alternative parser** that produces left-associative parse trees using iterative loops.
 
+#### Grammar (Iterative with Precedence)
+
+```
+E  -> T ('|'|'∪' T)*                    # Union (lowest precedence, left-assoc)
+T  -> F ('.'|'⋅' F | F)*                # Concatenation (middle precedence, left-assoc)
+F  -> P '*'*                             # Kleene star (highest precedence)
+P  -> ∅ | ϵ | τ[...] | t[...] | (E)    # Primary (atoms)
+```
+
+**Note**: Both parsers implement the **same precedence** (star > concat > union) but differ in associativity.
+
 #### Why Left-Associative?
 
 Left-associative trees are more natural for **left-to-right algorithms**:
+
 - **Brzozowski derivatives**: "Peel off" symbols from the left
 - **Streaming/sequential processing**: Process prefix first
 - **Natural traversal**: Matches reading order
@@ -228,8 +234,10 @@ RegeReaderLeft.readExpression(input, false)
 | Aspect | RegeReader | RegeReaderLeft |
 |--------|------------|----------------|
 | Parse style | Recursive descent | Iterative loops |
+| **Precedence** | **star > concat > union** | **star > concat > union** |
 | Concatenation | `a⋅(b⋅c)` | `(a⋅b)⋅c` |
 | Union | `a\|(b\|c)` | `(a\|b)\|c` |
+| Precedence example | `a.b\|c` → `(a⋅b)\|c` | `a.b\|c` → `(a⋅b)\|c` |
 | Best for | Composition, natural parsing | Derivatives, left-to-right |
 | Tree shape | Right-heavy | Left-heavy |
 

@@ -5,22 +5,35 @@ import rege.syntax.model.*;
 /**
  * Parser for regular expressions that produces LEFT-ASSOCIATIVE parse trees.
  * 
- * Contrast with RegeReader which produces right-associative trees:
- * - RegeReader: a.b.c → a⋅(b⋅c)
- * - RegeReaderLeft: a.b.c → (a⋅b)⋅c
+ * <p>This parser implements standard regex precedence (highest to lowest):
+ * <ol>
+ *   <li>Kleene star (*) - highest precedence</li>
+ *   <li>Concatenation (⋅) - middle precedence</li>
+ *   <li>Union (|) - lowest precedence</li>
+ * </ol>
  * 
- * This parser uses an iterative approach to build left-associative structures,
+ * <p>Operators are LEFT-ASSOCIATIVE:
+ * <ul>
+ *   <li>a.b.c → (a⋅b)⋅c</li>
+ *   <li>a|b|c → (a|b)|c</li>
+ *   <li>a** → (a*)* (star is special: right-associative for correct semantics)</li>
+ * </ul>
+ * 
+ * <p>Contrast with RegeReader which produces right-associative trees:
+ * <ul>
+ *   <li>RegeReader: a.b.c → a⋅(b⋅c)</li>
+ *   <li>RegeReaderLeft: a.b.c → (a⋅b)⋅c</li>
+ * </ul>
+ * 
+ * <p>This parser uses an iterative approach to build left-associative structures,
  * which can be more natural for left-to-right processing (e.g., Brzozowski derivatives).
  * 
- * Grammar (same as RegeReader but with left-associative operators):
+ * <p>Grammar (iterative with proper precedence):
  * <pre>
- * E  -> T E'
- * E' -> | T E' | ∪ T E' | ε
- * T  -> F T'
- * T' -> . F T' | ⋅ F T' | F T' | ε
- * F  -> P F'
- * F' -> * F' | ε
- * P  -> ∅ | ϵ | τ[...] | (E)
+ * E  -> T ('|'|'∪' T)*              // Union (lowest precedence, left-assoc)
+ * T  -> F ('.'|'⋅' F | F)*          // Concatenation (middle precedence, left-assoc)
+ * F  -> P '*'*                       // Kleene star (highest precedence)
+ * P  -> ∅ | ϵ | τ[...] | (E)        // Primary (atoms)
  * </pre>
  */
 public class RegeReaderLeft {
@@ -55,6 +68,8 @@ public class RegeReaderLeft {
     
     /**
      * Parse a full expression (union has lowest precedence).
+     * <p>
+     * Left-associative: a|b|c → (a|b)|c
      */
     private Expression parseExpression(Peekable input) {
         Expression left = parseConcatenation(input);
@@ -93,6 +108,8 @@ public class RegeReaderLeft {
     
     /**
      * Parse concatenation (higher precedence than union).
+     * <p>
+     * Left-associative: a.b.c → (a⋅b)⋅c
      */
     private Expression parseConcatenation(Peekable input) {
         Expression left = parseKleene(input);
@@ -144,6 +161,9 @@ public class RegeReaderLeft {
     
     /**
      * Parse Kleene star (highest precedence).
+     * <p>
+     * Note: Star itself is right-associative for correct semantics: a** → (a*)*
+     * This is consistent with standard regex behavior.
      */
     private Expression parseKleene(Peekable input) {
         Expression expr = parsePrimary(input);

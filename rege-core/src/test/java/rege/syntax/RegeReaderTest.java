@@ -177,6 +177,7 @@ class RegeReaderTest {
     
     @Test
     void testReadParensWithUnion() {
+        // ϵ(ϵ|ϵ) is implicit concatenation: ϵ⋅(ϵ|ϵ) right-associative
         Expression result = RegeReader.readExpression("ϵ(ϵ|ϵ)", false);
         assertEquals(
             new Concatenation(Expression.EPSILON, new Union(Expression.EPSILON, Expression.EPSILON)),
@@ -186,14 +187,14 @@ class RegeReaderTest {
     
     @Test
     void testReadParensPrecedence() {
-        // ϵϵ|ϵ parses as (ϵ⋅ϵ)|ϵ
+        // ϵϵ|ϵ parses as (ϵ⋅ϵ)|ϵ due to standard precedence (concat > union)
         Expression result1 = RegeReader.readExpression("ϵϵ|ϵ", false);
         assertEquals(
-            new Concatenation(Expression.EPSILON, new Union(Expression.EPSILON, Expression.EPSILON)),
+            new Union(new Concatenation(Expression.EPSILON, Expression.EPSILON), Expression.EPSILON),
             result1
         );
         
-        // (ϵϵ)|ϵ explicitly groups the concatenation
+        // (ϵϵ)|ϵ explicitly groups the concatenation (same result)
         Expression result2 = RegeReader.readExpression("(ϵϵ)|ϵ", false);
         assertEquals(
             new Union(new Concatenation(Expression.EPSILON, Expression.EPSILON), Expression.EPSILON),
@@ -302,11 +303,12 @@ class RegeReaderTest {
     
     @Test
     void testComplexExpression2() {
-        // a⋅b|c⋅d
+        // a⋅b|c⋅d should parse as (a⋅b)|(c⋅d) due to standard precedence
         Expression result = RegeReader.readExpression("τ[a]⋅τ[b]|τ[c]⋅τ[d]", false);
-        assertTrue(result instanceof Concatenation);
-        Concatenation concat = (Concatenation) result;
-        assertTrue(concat.rhs() instanceof Union);
+        assertTrue(result instanceof Union);
+        Union union = (Union) result;
+        assertTrue(union.lhs() instanceof Concatenation);
+        assertTrue(union.rhs() instanceof Concatenation);
     }
     
     @Test
@@ -400,10 +402,10 @@ class RegeReaderTest {
         assertTrue(result instanceof Union);
     }
     
-    // Operator Precedence Tests
+    // Operator Precedence Tests (Standard regex: star > concat > union)
     
     @Test
-    void testPrecedenceStarOverConcat() {
+    void testPrecedenceStarHighest() {
         // a*b should parse as (a*)⋅b, not (a⋅b)*
         Expression result = RegeReader.readExpression("τ[a]*τ[b]", false);
         assertTrue(result instanceof Concatenation);
@@ -413,12 +415,14 @@ class RegeReaderTest {
     }
     
     @Test
-    void testPrecedenceConcatOverUnion() {
+    void testPrecedenceConcatHigherThanUnion() {
         // a⋅b|c should parse as (a⋅b)|c, not a⋅(b|c)
         Expression result = RegeReader.readExpression("τ[a]τ[b]|τ[c]", false);
-        assertTrue(result instanceof Concatenation);
-        Concatenation concat = (Concatenation) result;
-        assertTrue(concat.rhs() instanceof Union);
+        // With correct precedence: concat binds tighter than union
+        assertTrue(result instanceof Union);
+        Union union = (Union) result;
+        assertTrue(union.lhs() instanceof Concatenation);
+        assertEquals(new Token("c"), union.rhs());
     }
     
     @Test
@@ -459,5 +463,47 @@ class RegeReaderTest {
     void testSpecialCharsInToken() {
         Expression result = RegeReader.readExpression("τ[!@#$%^&*()]");
         assertEquals(new Token("!@#$%^&*()"), result);
+    }
+    
+    // Additional Precedence Tests (Standard regex: star > concat > union)
+    
+    @Test
+    void testPrecedenceUnionLowest() {
+        // a|b.c should parse as a|(b.c)
+        Expression result = RegeReader.readExpression("τ[a]|τ[b].τ[c]", false);
+        assertTrue(result instanceof Union);
+        Union union = (Union) result;
+        assertEquals(new Token("a"), union.lhs());
+        assertTrue(union.rhs() instanceof Concatenation);
+    }
+    
+    @Test
+    void testPrecedenceStarVsUnion() {
+        // a*|b should parse as (a*)|b
+        Expression result = RegeReader.readExpression("τ[a]*|τ[b]", false);
+        assertTrue(result instanceof Union);
+        Union union = (Union) result;
+        assertTrue(union.lhs() instanceof KleeneStar);
+        assertEquals(new Token("b"), union.rhs());
+    }
+    
+    @Test
+    void testPrecedenceComplexMultiOp() {
+        // a*b|c*d should parse as ((a*).b)|((c*).d)
+        Expression result = RegeReader.readExpression("τ[a]*τ[b]|τ[c]*τ[d]", false);
+        assertTrue(result instanceof Union);
+        Union union = (Union) result;
+        
+        // Left side: (a*).b
+        assertTrue(union.lhs() instanceof Concatenation);
+        Concatenation leftConcat = (Concatenation) union.lhs();
+        assertTrue(leftConcat.lhs() instanceof KleeneStar);
+        assertEquals(new Token("b"), leftConcat.rhs());
+        
+        // Right side: (c*).d  
+        assertTrue(union.rhs() instanceof Concatenation);
+        Concatenation rightConcat = (Concatenation) union.rhs();
+        assertTrue(rightConcat.lhs() instanceof KleeneStar);
+        assertEquals(new Token("d"), rightConcat.rhs());
     }
 }

@@ -6,15 +6,18 @@
  * 
  * <h2>Parsers</h2>
  * 
+ * <p>Both parsers implement <b>standard regex precedence</b> (star &gt; concat &gt; union)
+ * but differ in <b>associativity</b>.
+ * 
  * <h3>RegeReader (Right-Associative)</h3>
  * <p>{@link rege.syntax.RegeReader} implements a recursive descent parser that
  * produces right-associative parse trees. This is the default parser.
  * 
  * <p><b>Example:</b>
  * <pre>{@code
- * Expression expr = RegeReader.read("τ[a]τ[b]τ[c]");
+ * Expression expr = RegeReader.readExpression("τ[a]τ[b]τ[c]");
  * // Produces: Concatenation(Token("a"), Concatenation(Token("b"), Token("c")))
- * // Structure: a⋅(b⋅c)
+ * // Structure: a⋅(b⋅c)  [right-associative]
  * }</pre>
  * 
  * <h3>RegeReaderLeft (Left-Associative)</h3>
@@ -23,9 +26,9 @@
  * 
  * <p><b>Example:</b>
  * <pre>{@code
- * Expression expr = RegeReaderLeft.read("τ[a]τ[b]τ[c]");
+ * Expression expr = RegeReaderLeft.readExpression("τ[a]τ[b]τ[c]");
  * // Produces: Concatenation(Concatenation(Token("a"), Token("b")), Token("c"))
- * // Structure: (a⋅b)⋅c
+ * // Structure: (a⋅b)⋅c  [left-associative]
  * }</pre>
  * 
  * <h3>Grammar</h3>
@@ -35,25 +38,28 @@
  * E → ∅              (empty language, U+2205)
  *   | ε              (epsilon, U+03B5)
  *   | τ[value]       (token with value)
+ *   | t[value]       (alternative token syntax)
  *   | (E)            (parenthesized expression)
  *   | E | E          (union, can also use ∪)
  *   | E . E          (concatenation, can also use ⋅ or implicit)
  *   | E *            (Kleene star)
  * </pre>
  * 
- * <h3>Operator Precedence</h3>
- * <p>Both parsers use the same precedence (highest to lowest):
+ * <h3>Operator Precedence (Standard Regex)</h3>
+ * <p>Both parsers implement the same precedence (highest to lowest):
  * <ol>
- *   <li>Kleene star (*) - highest precedence</li>
- *   <li>Concatenation (⋅ or implicit)</li>
- *   <li>Union (|) - lowest precedence</li>
+ *   <li><b>Kleene star (*)</b> - highest precedence, binds tightest</li>
+ *   <li><b>Concatenation (⋅ or implicit)</b> - middle precedence</li>
+ *   <li><b>Union (|)</b> - lowest precedence, binds loosest</li>
  * </ol>
  * 
- * <p><b>Examples:</b>
+ * <p><b>Precedence Examples:</b>
  * <ul>
- *   <li>{@code a|b*} parses as {@code a|(b*)}</li>
- *   <li>{@code ab*} parses as {@code a(b*)}</li>
- *   <li>{@code a|bc} parses as {@code a|(bc)}</li>
+ *   <li>{@code a|b*} parses as {@code a|(b*)} - star binds before union</li>
+ *   <li>{@code ab*} parses as {@code a(b*)} - star binds before concat</li>
+ *   <li>{@code a|bc} parses as {@code a|(bc)} - concat binds before union</li>
+ *   <li>{@code a.b|c.d} parses as {@code (a.b)|(c.d)} - both concats before union</li>
+ *   <li>{@code a*b|c} parses as {@code ((a*)b)|c} - star, then concat, then union</li>
  * </ul>
  * 
  * <h3>Smart Construction</h3>

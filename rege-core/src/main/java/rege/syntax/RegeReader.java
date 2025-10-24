@@ -3,23 +3,37 @@ package rege.syntax;
 import rege.syntax.model.*;
 
 /**
- * Reader for parsing regular expressions from text format.
+ * Parser for regular expressions that produces RIGHT-ASSOCIATIVE parse trees.
  * <p>
- * Grammar:
- * <pre>
- * E  -> ∅ E'              // empty
- *     | ϵ E'              // epsilon
- *     | τ[string] E'      // token
- *     | (E) E'            // parentheses
+ * This parser implements standard regex precedence (highest to lowest):
+ * <ol>
+ *   <li>Kleene star (*) - highest precedence</li>
+ *   <li>Concatenation (⋅) - middle precedence</li>
+ *   <li>Union (|) - lowest precedence</li>
+ * </ol>
  * 
- * E' -> | E E'            // union
- *     | . E E'            // concatenation
- *     | ⋅ E E'            // concatenation (alternative symbol)
- *     | * E'              // kleene star
- *     | ϵ                 // empty (end of input)
+ * <p>Operators are RIGHT-ASSOCIATIVE:
+ * <ul>
+ *   <li>a.b.c → a⋅(b⋅c)</li>
+ *   <li>a|b|c → a|(b|c)</li>
+ *   <li>a** → (a*)*</li>
+ * </ul>
+ * 
+ * <p>Grammar (recursive descent with precedence):
+ * <pre>
+ * E  -> T E'                      // Union (lowest precedence)
+ * E' -> | T E' | ∪ T E' | ε
+ * 
+ * T  -> F T'                      // Concatenation (middle precedence)
+ * T' -> . F T' | ⋅ F T' | F T' | ε (implicit concat)
+ * 
+ * F  -> P F'                      // Kleene star (highest precedence)
+ * F' -> * F' | ε
+ * 
+ * P  -> ∅ | ϵ | τ[...] | (E)      // Primary (atoms)
  * </pre>
- * <p>
- * Usage:
+ * 
+ * <p>Usage:
  * <pre>{@code
  * Expression expr = RegeReader.readExpression("τ[a] | τ[b]");
  * Expression smart = RegeReader.readExpression("ϵ | ϵ", true); // Uses smart constructors
@@ -27,7 +41,6 @@ import rege.syntax.model.*;
  */
 public class RegeReader {
     
-    private Expression context;
     private final boolean isSmart;
     
     /**
@@ -36,7 +49,7 @@ public class RegeReader {
      * @param isSmart if true, uses smart constructors (union(), concat(), star())
      *                which apply simplification rules
      */
-    public RegeReader(boolean isSmart) {
+    private RegeReader(boolean isSmart) {
         this.isSmart = isSmart;
     }
     
@@ -58,188 +71,250 @@ public class RegeReader {
      * @return the parsed expression, or null if parsing fails
      */
     public static Expression readExpression(String input, boolean isSmart) {
-        return new RegeReader(isSmart).readExpression(new Peekable(input));
+        return new RegeReader(isSmart).parseUnion(new Peekable(input));
     }
     
     /**
-     * Read an expression from the peekable input.
-     * 
-     * @param input the peekable input
-     * @return the parsed expression, or null if parsing fails
+     * Parse a union expression (lowest precedence).
+     * <p>
+     * Grammar: E -> T ('|'|'∪' T)?
+     * <p>
+     * Right-associative: a|b|c → a|(b|c)
      */
-    public Expression readExpression(Peekable input) {
+    private Expression parseUnion(Peekable input) {
+        Expression left = parseConcatenation(input);
+        if (left == null) {
+            return null;
+        }
+        
+        eatSpace(input);
+        if (!input.hasNext()) {
+            return left;
+        }
+        
+        char ch = input.peek();
+        if (ch != '|' && ch != '∪') {
+            return left;
+        }
+        
+        input.next(); // consume operator
+        
+        // Right-recursive: parse rest as another union
+        Expression right = parseUnion(input);
+        if (right == null) {
+            return null;
+        }
+        
+        if (isSmart) {
+            return left.union(right);
+        }
+        return new Union(left, right);
+    }
+    
+    /**
+     * Parse a concatenation expression (middle precedence).
+     * <p>
+     * Grammar: T -> F ('.'|'⋅' F | F)?
+     * <p>
+     * Right-associative: a.b.c → a⋅(b⋅c)
+     */
+    private Expression parseConcatenation(Peekable input) {
+        Expression left = parseKleene(input);
+        if (left == null) {
+            return null;
+        }
+        
+        eatSpace(input);
+        if (!input.hasNext()) {
+            return left;
+        }
+        
+        char ch = input.peek();
+        
+        // Check for explicit concatenation operators
+        boolean hasExplicitOperator = (ch == '.' || ch == '⋅');
+        if (hasExplicitOperator) {
+            input.next(); // consume operator
+            eatSpace(input);
+        }
+        
+        // Stop if we see a union or closing paren (lower precedence or end of group)
+        if (ch == '|' || ch == '∪' || ch == ')') {
+            return left;
+        }
+        
+        // Try to parse another term (implicit concatenation)
+        Expression right = parseConcatenation(input);
+        if (right == null) {
+            if (hasExplicitOperator) {
+                // Had explicit operator but no right operand - error
+                return null;
+            }
+            // No explicit operator and can't parse more - just return left
+            return left;
+        }
+        
+        if (isSmart) {
+            return left.concat(right);
+        }
+        return new Concatenation(left, right);
+    }
+    
+    /**
+     * Parse a Kleene star expression (highest precedence).
+     * <p>
+     * Grammar: F -> P '*'*
+     * <p>
+     * Right-associative: a** → (a*)*
+     */
+    private Expression parseKleene(Peekable input) {
+        Expression expr = parsePrimary(input);
+        if (expr == null) {
+            return null;
+        }
+        
+        // Check for star operator
+        eatSpace(input);
+        if (!input.hasNext() || input.peek() != '*') {
+            return expr;
+        }
+        
+        input.next(); // consume *
+        
+        // Right-recursive: apply star then check for more stars
+        Expression starred;
+        if (isSmart) {
+            starred = expr.star();
+        } else {
+            starred = new KleeneStar(expr);
+        }
+        
+        // Recursively handle multiple stars: a** → (a*)*
+        eatSpace(input);
+        if (input.hasNext() && input.peek() == '*') {
+            // Parse the remaining stars recursively
+            return parseKleeneSuffix(starred, input);
+        }
+        
+        return starred;
+    }
+    
+    /**
+     * Helper to parse suffix stars right-associatively.
+     */
+    private Expression parseKleeneSuffix(Expression expr, Peekable input) {
+        if (!input.hasNext() || input.peek() != '*') {
+            return expr;
+        }
+        
+        input.next(); // consume *
+        
+        Expression starred;
+        if (isSmart) {
+            starred = expr.star();
+        } else {
+            starred = new KleeneStar(expr);
+        }
+        
+        // Recursively handle more stars
+        eatSpace(input);
+        return parseKleeneSuffix(starred, input);
+    }
+    
+    /**
+     * Parse a primary expression (atoms and parenthesized expressions).
+     * <p>
+     * Grammar: P -> ∅ | ϵ | τ[...] | (E)
+     */
+    private Expression parsePrimary(Peekable input) {
         eatSpace(input);
         
-        Expression expr = readEmpty(input);
-        if (expr != null) {
-            return getRemaining(input, expr);
+        if (!input.hasNext()) {
+            return null;
         }
         
-        expr = readEpsilon(input);
-        if (expr != null) {
-            return getRemaining(input, expr);
+        char ch = input.peek();
+        
+        // Empty set
+        if (ch == '∅') {
+            input.next();
+            return Expression.EMPTY;
         }
         
-        expr = readToken(input);
-        if (expr != null) {
-            return getRemaining(input, expr);
+        // Epsilon
+        if (ch == 'ϵ') {
+            input.next();
+            return Expression.EPSILON;
         }
         
-        expr = readParens(input);
-        if (expr != null) {
-            return getRemaining(input, expr);
+        // Token
+        if (ch == 'τ' || ch == 't') {
+            return parseToken(input);
+        }
+        
+        // Parenthesized expression
+        if (ch == '(') {
+            return parseParens(input);
         }
         
         return null;
     }
     
-    private Expression getRemaining(Peekable input, Expression expr) {
-        this.context = expr;
-        Expression result = readExpressionPrim(input);
-        if (result == null) {
-            result = this.context;
-        }
-        this.context = null;
-        return result;
-    }
-    
-    private Expression readExpressionPrim(Peekable input) {
-        eatSpace(input);
-        
-        Expression expr = readConcatenation(input);
-        if (expr != null) {
-            return getRemaining(input, expr);
-        }
-        
-        expr = readUnion(input);
-        if (expr != null) {
-            return getRemaining(input, expr);
-        }
-        
-        expr = readKleeneStar(input);
-        if (expr != null) {
-            return getRemaining(input, expr);
-        }
-        
-        if (input.hasNext()) {
-            return null;
-        }
-        
-        return this.context;
-    }
-    
-    private Expression readEmpty(Peekable input) {
-        if (!input.hasNext() || input.peek() != '∅') {
-            return null;
-        }
-        input.next();
-        return Expression.EMPTY;
-    }
-    
-    private Expression readEpsilon(Peekable input) {
-        if (!input.hasNext() || input.peek() != 'ϵ') {
-            return null;
-        }
-        input.next();
-        return Expression.EPSILON;
-    }
-    
-    private Expression readToken(Peekable input) {
-        if (!input.hasNext() || (input.peek() != 'τ' && input.peek() != 't')) {
-            return null;
-        }
-        input.next();
+    /**
+     * Parse a token: τ[value] or t[value].
+     */
+    private Expression parseToken(Peekable input) {
+        input.next(); // consume τ or t
         eatSpace(input);
         
         if (!input.hasNext() || input.peek() != '[') {
             return null;
         }
-        input.next();
+        input.next(); // consume [
         
         String value = readTokenValue(input);
         
         if (!input.hasNext() || input.peek() != ']') {
             return null;
         }
-        input.next();
+        input.next(); // consume ]
         
         return new Token(value);
     }
     
-    private Expression readConcatenation(Peekable input) {
-        Expression lhs = this.context;
-        if (!input.hasNext()) {
+    /**
+     * Parse a parenthesized expression: (E).
+     */
+    private Expression parseParens(Peekable input) {
+        input.next(); // consume (
+        
+        Expression expr = parseUnion(input);
+        if (expr == null) {
             return null;
         }
         
-        // '.' and '⋅' are optional concatenation operators
-        if (input.peek() == '.' || input.peek() == '⋅') {
-            input.next();
-        }
-        
-        Expression rhs = readExpression(input);
-        if (rhs == null) {
-            return null;
-        }
-        
-        if (isSmart) {
-            return lhs.concat(rhs);
-        }
-        return new Concatenation(lhs, rhs);
-    }
-    
-    private Expression readUnion(Peekable input) {
-        Expression lhs = this.context;
-        if (!input.hasNext() || (input.peek() != '|' && input.peek() != '∪')) {
-            return null;
-        }
-        input.next();
-        
-        Expression rhs = readExpression(input);
-        if (rhs == null) {
-            return null;
-        }
-        
-        if (isSmart) {
-            return lhs.union(rhs);
-        }
-        return new Union(lhs, rhs);
-    }
-    
-    private Expression readKleeneStar(Peekable input) {
-        if (!input.hasNext() || input.peek() != '*') {
-            return null;
-        }
-        input.next();
-        
-        if (isSmart) {
-            return this.context.star();
-        }
-        return new KleeneStar(this.context);
-    }
-    
-    private Expression readParens(Peekable input) {
-        if (!input.hasNext() || input.peek() != '(') {
-            return null;
-        }
-        input.next();
-        
-        Expression expr = readExpression(input);
-        
+        eatSpace(input);
         if (!input.hasNext() || input.peek() != ')') {
             return null;
         }
-        input.next();
+        input.next(); // consume )
         
         return expr;
     }
     
+    /**
+     * Skip whitespace characters.
+     */
     private void eatSpace(Peekable input) {
-        while (input.hasNext() && (input.peek() == ' ' || input.peek() == '\t')) {
+        while (input.hasNext() && Character.isWhitespace(input.peek())) {
             input.next();
         }
     }
     
+    /**
+     * Read characters until we hit ']', preserving escape sequences.
+     * The parser keeps backslashes in token values (e.g., "\]" stays as "\]").
+     */
     private String readTokenValue(Peekable input) {
         StringBuilder token = new StringBuilder();
         char precedent = '\0';
