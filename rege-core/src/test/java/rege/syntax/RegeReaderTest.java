@@ -87,8 +87,9 @@ class RegeReaderTest {
     
     @Test
     void testReadTokenEmpty() {
+        // Empty token value τ[] should be parsed as epsilon, not Token("")
         Expression result = RegeReader.readExpression("τ[]");
-        assertEquals(new Token(""), result);
+        assertEquals(Expression.EPSILON, result);
     }
     
     // Whitespace Handling

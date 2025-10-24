@@ -18,11 +18,16 @@ import java.util.function.BiPredicate;
  * <ul>
  *   <li>D_a(∅) = ∅</li>
  *   <li>D_a(ε) = ∅</li>
- *   <li>D_a(τ[v]) = ε if evaluator(v, a) = true, else ∅</li>
+ *   <li>D_a(τ[v]) = ε if evaluator(v, a) = true, else ∅ (v must be non-empty)</li>
  *   <li>D_a(B⋅C) = D_a(B)⋅C | ν(B)⋅D_a(C)</li>
  *   <li>D_a(B|C) = D_a(B) | D_a(C)</li>
  *   <li>D_a(B*) = D_a(B)⋅B*</li>
  * </ul>
+ * 
+ * <p><b>Token Values:</b>
+ * The evaluator receives token values that are guaranteed to be non-empty.
+ * Empty strings are represented using {@link Epsilon}, not {@link Token}.
+ * This ensures clear mathematical semantics and prevents ambiguity in derivative computation.
  * 
  * <p><b>Usage:</b>
  * <pre>{@code
@@ -36,6 +41,7 @@ import java.util.function.BiPredicate;
  * 
  * @param <T> the type of input symbols (e.g., Character, String, etc.)
  * @see Nullability
+ * @see Token
  */
 public class Brzozowski<T> implements Visitor<T, Expression> {
     
@@ -47,6 +53,7 @@ public class Brzozowski<T> implements Visitor<T, Expression> {
      * 
      * @param evaluator function that evaluates if a token matches an input symbol.
      *                  Takes (tokenValue, input) and returns true if they match.
+     *                  The tokenValue parameter is guaranteed to be non-empty.
      */
     public Brzozowski(BiPredicate<String, T> evaluator) {
         this.evaluator = evaluator;
@@ -100,6 +107,9 @@ public class Brzozowski<T> implements Visitor<T, Expression> {
      * 
      * <p>If the token matches the input (via the evaluator), the derivative is ε
      * (we've consumed the token, nothing left to match). Otherwise, it's ∅.
+     * 
+     * <p>The token value is guaranteed to be non-empty by the {@link Token} constructor,
+     * so evaluators never need to handle empty strings.
      */
     @Override
     public Expression visitToken(Token token, T input) {

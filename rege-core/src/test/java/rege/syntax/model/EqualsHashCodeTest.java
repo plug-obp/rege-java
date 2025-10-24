@@ -216,4 +216,49 @@ class EqualsHashCodeTest {
         
         assertEquals(hash1, hash2, "hashCode must be consistent across multiple calls");
     }
+    
+    // ========== Token Empty Value Tests ==========
+    
+    @Test
+    void testTokenRejectsEmptyString() {
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> new Token(""),
+            "Token should reject empty string"
+        );
+        
+        assertTrue(
+            exception.getMessage().contains("empty"),
+            "Exception message should mention 'empty'"
+        );
+        assertTrue(
+            exception.getMessage().contains("EPSILON"),
+            "Exception message should suggest using EPSILON"
+        );
+    }
+    
+    @Test
+    void testTokenAcceptsNonEmptyStrings() {
+        // All of these should be valid
+        assertDoesNotThrow(() -> new Token("a"));
+        assertDoesNotThrow(() -> new Token("hello"));
+        assertDoesNotThrow(() -> new Token(" "));  // Space is valid
+        assertDoesNotThrow(() -> new Token("\n"));  // Newline is valid
+        assertDoesNotThrow(() -> new Token("\t"));  // Tab is valid
+        assertDoesNotThrow(() -> new Token("123"));  // Numbers are valid
+    }
+    
+    @Test
+    void testTokenRejectsNull() {
+        NullPointerException exception = assertThrows(
+            NullPointerException.class,
+            () -> new Token(null),
+            "Token should reject null value"
+        );
+        
+        assertTrue(
+            exception.getMessage().contains("null"),
+            "Exception message should mention 'null'"
+        );
+    }
 }

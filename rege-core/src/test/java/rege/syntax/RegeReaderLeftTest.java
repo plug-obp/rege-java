@@ -308,8 +308,9 @@ class RegeReaderLeftTest {
     
     @Test
     void testEmptyTokenValue() {
+        // Empty token value τ[] should be parsed as epsilon, not Token("")
         Expression result = RegeReaderLeft.readExpression("τ[]", false);
-        assertEquals(new Token(""), result);
+        assertEquals(Expression.EPSILON, result);
     }
     
     @Test

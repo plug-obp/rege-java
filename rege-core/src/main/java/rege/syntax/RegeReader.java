@@ -262,6 +262,9 @@ public class RegeReader {
     
     /**
      * Parse a token: τ[value] or t[value].
+     * 
+     * <p>If the token value is empty (τ[]), returns {@link Expression#EPSILON}
+     * instead of creating an invalid empty token.
      */
     private Expression parseToken(Peekable input) {
         input.next(); // consume τ or t
@@ -278,6 +281,11 @@ public class RegeReader {
             return null;
         }
         input.next(); // consume ]
+        
+        // Empty token value should be represented as epsilon, not Token("")
+        if (value.isEmpty()) {
+            return Expression.EPSILON;
+        }
         
         return new Token(value);
     }

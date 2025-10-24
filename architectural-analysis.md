@@ -42,6 +42,38 @@ parseUnion()          // Lowest precedence: handles |
 - ✅ Both parsers now produce semantically equivalent results
 - ✅ Grammar documentation updated
 
+### Empty Token Prohibition (Mathematical Soundness)
+
+**Problem Identified:**
+Token values could be arbitrary strings, including empty strings. This created mathematical ambiguity:
+- Is `τ[""]` equivalent to `ε` (epsilon)?
+- Is `τ[""]` equivalent to `∅` (empty set)?
+- Should evaluators handle empty token values?
+
+**Mathematical Analysis:**
+Empty tokens conflate distinct concepts:
+- **Epsilon (ε)**: Accepts empty string, has special nullability semantics
+- **Token (τ)**: Accepts concrete input via external evaluator
+- **Empty (∅)**: Matches nothing
+
+**Solution Implemented:**
+1. Added validation to `Token` constructor to reject empty strings
+2. Updated parsers to treat `τ[]` as `Expression.EPSILON`
+3. Added comprehensive tests for empty token rejection
+4. Updated documentation to clarify token value constraints
+
+**Rationale:**
+- ✅ Clear mathematical semantics: τ ≠ ε ≠ ∅
+- ✅ Forces explicit use of `Expression.EPSILON` for empty strings
+- ✅ Evaluators guaranteed to receive non-empty token values
+- ✅ Fail-fast validation at construction time
+
+**Impact:**
+- ✅ Token values guaranteed non-empty
+- ✅ Parsers automatically convert `τ[]` to epsilon
+- ✅ Brzozowski evaluators never receive empty strings
+- ✅ 3 new tests verify empty token rejection
+
 ### Escape Sequence Consistency
 
 **Problem Discovered:**
@@ -522,7 +554,7 @@ This is **correctly implemented** and used in `RegeDependentSemantics` to prune 
 
 | Package | Test Class | Test Count | Focus |
 |---------|------------|------------|-------|
-| syntax.model | EqualsHashCodeTest | 13 | Equality contracts, commutative equality |
+| syntax.model | EqualsHashCodeTest | 16 | Equality contracts, commutative equality, empty token validation |
 | syntax.model | SimplifierTest | 25 | Algebraic simplification rules |
 | syntax.model | SimplifierAbsorptionTest | 16 | Deep absorption laws |
 | syntax.model | UnionAbsorptionTest | 10 | Union smart constructor absorption |
@@ -536,7 +568,7 @@ This is **correctly implemented** and used in `RegeDependentSemantics` to prune 
 | semantics | BrzozowskiTest | 22 | Derivative computation |
 | semantics | RegeDependentSemanticsTest | 16 | Framework usage |
 
-**Total: 298 @Test annotations, all passing ✅**
+**Total: 301 @Test annotations, all passing ✅**
 
 ### 6.2 Test Quality
 

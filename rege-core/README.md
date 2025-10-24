@@ -51,9 +51,11 @@ Expression (sealed interface)
 
 | Type | Notation | Description | Implementation |
 |------|----------|-------------|----------------|
-| **Token** | `τ[value]` | Matches a specific string | `record Token(String value)` |
+| **Token** | `τ[value]` | Matches a non-empty string | `record Token(String value)` - value must be non-empty |
 | **Empty** | `∅` | Empty language (matches nothing) | Singleton with identity-based `equals()` |
 | **Epsilon** | `ε` | Empty string (matches "") | Singleton with identity-based `equals()` |
+
+**Token Constraint**: Token values **must be non-empty**. Attempting to create `new Token("")` throws `IllegalArgumentException`. Use `Expression.EPSILON` to represent the empty string. Parsers automatically convert `τ[]` to `Expression.EPSILON`.
 
 **Singleton Design**: `Empty` and `Epsilon` use the singleton pattern with serialization protection via `readResolve()`.
 

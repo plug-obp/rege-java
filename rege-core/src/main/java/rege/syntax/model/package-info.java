@@ -12,7 +12,7 @@
  * <pre>
  * Expression (sealed interface)
  * ├── Terminal (sealed interface)
- * │   ├── Token - represents a symbol from an alphabet
+ * │   ├── Token - represents a non-empty symbol from an alphabet
  * │   ├── Empty - represents the empty language (∅)
  * │   └── Epsilon - represents the empty string (ε)
  * └── Composite (sealed interface)
@@ -20,6 +20,9 @@
  *     ├── Concatenation - represents sequencing (A⋅B)
  *     └── KleeneStar - represents repetition (A*)
  * </pre>
+ * 
+ * <p><b>Important:</b> {@link rege.syntax.model.Token} values must be non-empty.
+ * Empty strings should be represented using {@link rege.syntax.model.Epsilon}, not Token.
  * 
  * <h2>Design Patterns</h2>
  * 
