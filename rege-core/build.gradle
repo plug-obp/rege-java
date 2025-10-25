@@ -2,7 +2,7 @@ plugins {
     id 'java'
 }
 
-group = 'fr.ensta'
+group = 'org.obpcdl'
 version = '1.0.0'
 
 repositories {
