@@ -8,6 +8,13 @@ package rege.syntax.model;
 public class DeepAbsorptionDemo {
     
     /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
+    private DeepAbsorptionDemo() {
+        // Utility class - not meant to be instantiated
+    }
+    
+    /**
      * Main entry point for the demonstration.
      * @param args command line arguments (unused)
      */

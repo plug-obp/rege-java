@@ -7,6 +7,13 @@ package rege.syntax.model;
 public class SimplifierExample {
     
     /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
+    private SimplifierExample() {
+        // Utility class - not meant to be instantiated
+    }
+    
+    /**
      * Main entry point for the examples.
      * @param args command line arguments (unused)
      */
