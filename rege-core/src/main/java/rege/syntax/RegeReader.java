@@ -140,24 +140,6 @@ public class RegeReader {
     }
     
     /**
-     * Legacy method for backward compatibility.
-     * @deprecated Use {@link #parse(String)} instead
-     */
-    @Deprecated
-    public static Expression readExpression(String input) {
-        return parse(input, true).orElse(null);
-    }
-    
-    /**
-     * Legacy method for backward compatibility.
-     * @deprecated Use {@link #parse(String, boolean)} instead
-     */
-    @Deprecated
-    public static Expression readExpression(String input, boolean isSmart) {
-        return parse(input, isSmart).orElse(null);
-    }
-    
-    /**
      * Record an error at the specified range.
      */
     private void error(Range range, String message) {

@@ -26,8 +26,8 @@ public class RegeReaderComparison {
         System.out.println("Input: " + input);
         System.out.println("================");
         
-        Expression right = RegeReader.readExpression(input, false);
-        Expression left = RegeReaderLeft.readExpression(input, false);
+        Expression right = RegeReader.parse(input, false).orElse(null);
+        Expression left = RegeReaderLeft.parse(input, false).orElse(null);
         
         System.out.println("RegeReader (right-associative):");
         System.out.println("  Structure: a⋅(b⋅c)");
@@ -46,8 +46,8 @@ public class RegeReaderComparison {
         System.out.println("Input: " + input);
         System.out.println("================");
         
-        Expression right = RegeReader.readExpression(input, false);
-        Expression left = RegeReaderLeft.readExpression(input, false);
+        Expression right = RegeReader.parse(input, false).orElse(null);
+        Expression left = RegeReaderLeft.parse(input, false).orElse(null);
         
         System.out.println("RegeReader (right-associative):");
         System.out.println("  Structure: a|(b|(c|d))");
@@ -63,8 +63,8 @@ public class RegeReaderComparison {
         System.out.println("Input: " + input);
         System.out.println("================");
         
-        Expression right = RegeReader.readExpression(input, false);
-        Expression left = RegeReaderLeft.readExpression(input, false);
+        Expression right = RegeReader.parse(input, false).orElse(null);
+        Expression left = RegeReaderLeft.parse(input, false).orElse(null);
         
         System.out.println("RegeReader (right-associative):");
         System.out.println("  Structure: (a|b)⋅(c*⋅d)");
@@ -90,8 +90,8 @@ public class RegeReaderComparison {
         };
         
         for (String test : tests) {
-            Expression right = RegeReader.readExpression(test, true);
-            Expression left = RegeReaderLeft.readExpression(test, true);
+            Expression right = RegeReader.parse(test, true).orElse(null);
+            Expression left = RegeReaderLeft.parse(test, true).orElse(null);
             boolean equal = right.equals(left);
             System.out.printf("  %-15s → Right: %-10s Left: %-10s Equal: %s%n",
                 test, 

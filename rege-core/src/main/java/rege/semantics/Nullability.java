@@ -23,6 +23,12 @@ import rege.syntax.model.*;
 public class Nullability implements Visitor<Void, Boolean> {
     
     /**
+     * Creates a new Nullability visitor.
+     */
+    public Nullability() {
+    }
+    
+    /**
      * Empty language is not nullable (doesn't accept ε).
      */
     @Override

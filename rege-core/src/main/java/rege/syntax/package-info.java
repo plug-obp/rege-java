@@ -169,14 +169,15 @@
  * 
  * <p><b>See:</b> {@link rege.reader.infra.AlienValidator} for complete documentation
  * 
- * <h3>Backward Compatibility</h3>
- * <p>Legacy methods are preserved but deprecated:
+ * <h3>Basic Usage</h3>
  * <pre>{@code
- * // Old API (deprecated, returns null on error)
- * Expression expr = RegeReader.readExpression("τ[a]");
- * 
- * // New API (recommended, returns ParseResult<Expression>)
+ * // Parse with error handling
  * ParseResult<Expression> result = RegeReader.parse("τ[a]");
+ * if (result instanceof ParseResult.Success<Expression> success) {
+ *     Expression expr = success.value();
+ * } else {
+ *     // Handle errors
+ * }
  * }</pre>
  * 
  * <h2>Pretty Printer</h2>

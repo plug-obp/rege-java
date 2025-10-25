@@ -39,6 +39,12 @@ package rege.syntax.model;
 public class Simplifier implements Visitor<Void, Expression> {
     
     /**
+     * Creates a new Simplifier visitor.
+     */
+    public Simplifier() {
+    }
+    
+    /**
      * Simplify the given expression.
      * 
      * @param expression the expression to simplify

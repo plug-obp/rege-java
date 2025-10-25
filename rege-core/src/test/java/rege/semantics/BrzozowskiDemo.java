@@ -57,7 +57,7 @@ public class BrzozowskiDemo {
         Brzozowski<Character> brz = new Brzozowski<>(charEval);
         
         // Pattern: (a|b)*⋅c
-        Expression pattern = RegeReader.readExpression("(t[a]|t[b])*⋅t[c]");
+        Expression pattern = RegeReader.parse("(t[a]|t[b])*⋅t[c]").orElse(null);
         
         String[] testStrings = {"c", "ac", "bc", "abc", "bac", "aaabbbccc", "ab", ""};
         

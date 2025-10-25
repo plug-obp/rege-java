@@ -2,9 +2,14 @@ package rege.syntax.model;
 
 /**
  * Example demonstrating the use of the Simplifier.
+ * This class shows various simplification rules applied to expressions.
  */
 public class SimplifierExample {
     
+    /**
+     * Main entry point for the examples.
+     * @param args command line arguments (unused)
+     */
     public static void main(String[] args) {
         System.out.println("=== Regular Expression Simplifier Examples ===\n");
         

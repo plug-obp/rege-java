@@ -2,9 +2,15 @@ package rege.syntax.model;
 
 /**
  * Demonstration of deep absorption in the Simplifier.
+ * This class shows how the Simplifier recursively applies
+ * absorption rules to nested expressions.
  */
 public class DeepAbsorptionDemo {
     
+    /**
+     * Main entry point for the demonstration.
+     * @param args command line arguments (unused)
+     */
     public static void main(String[] args) {
         System.out.println("=== Deep Absorption Demonstration ===\n");
         

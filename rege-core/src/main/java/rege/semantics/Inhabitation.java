@@ -30,6 +30,12 @@ import rege.syntax.model.*;
 public class Inhabitation implements Visitor<Void, Boolean> {
     
     /**
+     * Creates a new Inhabitation visitor.
+     */
+    public Inhabitation() {
+    }
+    
+    /**
      * Empty language is not inhabited.
      * 
      * @return false - L(∅) = {}

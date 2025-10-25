@@ -91,7 +91,7 @@ public sealed interface Expression permits Terminal, Composite {
         return EPSILON;
     }
 
-    /*
+    /**
      * Token factory method.
      * @param value the token value (non-empty)
      * @return a new Token expression
