@@ -1,0 +1,144 @@
+name: Build and Publish
+
+on:
+  push:
+    branches: [ '**' ]  # Build on all branches
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ '**' ]  # Build PRs to any branch
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      checks: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for accurate versioning
+
+    - name: Set up JDK 23
+      uses: actions/setup-java@v4
+      with:
+        java-version: '23'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Display Version
+      run: |
+        VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
+        echo "📦 Building version: $VERSION"
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+      env:
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        GITHUB_REF_NAME: ${{ github.ref_name }}
+        GITHUB_REF_TYPE: ${{ github.ref_type }}
+
+    - name: Build with Gradle
+      run: ./gradlew build
+      env:
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        GITHUB_REF_NAME: ${{ github.ref_name }}
+        GITHUB_REF_TYPE: ${{ github.ref_type }}
+
+    - name: Run tests
+      run: ./gradlew test
+      env:
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        GITHUB_REF_NAME: ${{ github.ref_name }}
+        GITHUB_REF_TYPE: ${{ github.ref_type }}
+
+    - name: Publish Test Report
+      uses: mikepenz/action-junit-report@v4
+      if: always()
+      with:
+        report_paths: '**/build/test-results/test/TEST-*.xml'
+        check_name: Test Results
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: jars-${{ env.VERSION }}
+        path: |
+          reader-infra/build/libs/*.jar
+          rege-core/build/libs/*.jar
+        retention-days: 30
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    # Only publish from main branch and version tags to avoid repository bloat
+    # Feature branches get built and tested, but not published
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Main' || startsWith(github.ref, 'refs/tags/v'))
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for accurate versioning
+
+    - name: Set up JDK 23
+      uses: actions/setup-java@v4
+      with:
+        java-version: '23'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Display Version
+      run: |
+        VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
+        echo "📦 Publishing version: $VERSION"
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+      env:
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        GITHUB_REF_NAME: ${{ github.ref_name }}
+        GITHUB_REF_TYPE: ${{ github.ref_type }}
+
+    - name: Validate Tag Version (if tagged)
+      if: startsWith(github.ref, 'refs/tags/')
+      run: ./gradlew validateTagVersion
+      env:
+        GITHUB_REF_NAME: ${{ github.ref_name }}
+        GITHUB_REF_TYPE: tag
+
+    - name: Publish to GitHub Packages
+      run: ./gradlew publish
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_ACTOR: ${{ github.actor }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        GITHUB_REF_NAME: ${{ github.ref_name }}
+        GITHUB_REF_TYPE: ${{ github.ref_type }}
+
+    - name: Create Release (on tag)
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          reader-infra/build/libs/*.jar
+          rege-core/build/libs/*.jar
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

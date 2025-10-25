@@ -1301,12 +1301,10 @@ The `rege-java` architecture is **exceptionally well-designed**. It demonstrates
 - **Deep understanding** of both domain (regular expressions, Brzozowski derivatives) and language (Java 23 features)
 - **Pragmatic trade-offs** (sealed types over open hierarchy, smart constructors over normalization passes)
 - **Attention to detail** (commutative hashCode, singleton serialization, absorption laws)
-- **Comprehensive validation** (361 tests, all mathematical properties verified)
+- **Comprehensive validation** (298 tests, all mathematical properties verified)
 - **Recent improvements** (precedence fix, escape handling, PrettyPrinter, documentation)
-- **Production infrastructure** (CI/CD pipeline, automated publishing, release automation)
-- **Reusable components** (reader-infra module designed for general parsing use)
 
-This is **production-quality code** with **enterprise-grade CI/CD infrastructure** that could serve as a **reference implementation** for:
+This is **production-quality code** that could serve as a **reference implementation** for:
 - Java 23 sealed type hierarchies
 - Visitor pattern with generics
 - Immutable algebraic data structures
