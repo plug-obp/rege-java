@@ -15,7 +15,7 @@ class PrettyPrinterRoundtripTest {
     
     private void assertRoundtrip(Expression expr) {
         String printed = PrettyPrinter.print(expr);
-        Expression parsed = RegeReader.readExpression(printed, false);
+        Expression parsed = RegeReader.parse(printed, false).orElse(null);
         assertEquals(expr, parsed, 
             "Roundtrip failed: original=" + expr + 
             ", printed=" + printed + 
@@ -24,8 +24,8 @@ class PrettyPrinterRoundtripTest {
     
     private void assertRoundtripBothParsers(Expression expr) {
         String printed = PrettyPrinter.print(expr);
-        Expression parsedRight = RegeReader.readExpression(printed, false);
-        Expression parsedLeft = RegeReaderLeft.readExpression(printed, false);
+        Expression parsedRight = RegeReader.parse(printed, false).orElse(null);
+        Expression parsedLeft = RegeReaderLeft.parse(printed, false).orElse(null);
         
         assertEquals(expr, parsedRight, 
             "Roundtrip failed with RegeReader: original=" + expr + 
@@ -78,7 +78,7 @@ class PrettyPrinterRoundtripTest {
         // Verify a specific case
         String printed = PrettyPrinter.print(new Token("a]b"));
         assertEquals("τ[a\\]b]", printed);
-        Expression parsed = RegeReader.readExpression(printed, false);
+        Expression parsed = RegeReader.parse(printed, false).orElse(null);
         assertEquals(new Token("a]b"), parsed);
     }
     
@@ -122,8 +122,8 @@ class PrettyPrinterRoundtripTest {
         assertEquals("τ[a]|τ[b]|τ[c]", printed);
         
         // Both parsers should successfully parse it (though structure differs)
-        Expression parsedRight = RegeReader.readExpression(printed, false);
-        Expression parsedLeft = RegeReaderLeft.readExpression(printed, false);
+        Expression parsedRight = RegeReader.parse(printed, false).orElse(null);
+        Expression parsedLeft = RegeReaderLeft.parse(printed, false).orElse(null);
         assertNotNull(parsedRight);
         assertNotNull(parsedLeft);
     }
@@ -140,7 +140,7 @@ class PrettyPrinterRoundtripTest {
         assertEquals("τ[a]τ[b]τ[c]", printed);
         
         // RegeReaderLeft preserves left-associativity
-        Expression parsedLeft = RegeReaderLeft.readExpression(printed, false);
+        Expression parsedLeft = RegeReaderLeft.parse(printed, false).orElse(null);
         assertEquals(expr, parsedLeft);
     }
     
@@ -277,7 +277,7 @@ class PrettyPrinterRoundtripTest {
         assertEquals("(τ[a]|τ[b]|τ[c]|τ[d])*", printed);
         
         // Due to right-associativity, structure changes but expression is semantically equivalent
-        Expression parsed = RegeReader.readExpression(printed, false);
+        Expression parsed = RegeReader.parse(printed, false).orElse(null);
         assertNotNull(parsed);
         // Could verify semantic equivalence by checking derivatives, but structural equality doesn't hold
     }
@@ -308,7 +308,7 @@ class PrettyPrinterRoundtripTest {
         assertEquals("(τ[a]|τ[b]|τ[c])*", printed);
         
         // Parser produces right-associative structure: (a|(b|c))* instead of ((a|b)|c)*
-        Expression parsed = RegeReader.readExpression(printed, false);
+        Expression parsed = RegeReader.parse(printed, false).orElse(null);
         assertNotNull(parsed);
         // Semantically equivalent, structurally different
     }
@@ -327,7 +327,7 @@ class PrettyPrinterRoundtripTest {
         assertEquals("τ[a](τ[b]|ϵ)τ[c]", printed);
         
         // Parser produces right-associative: a((b|ε)c) instead of (a(b|ε))c
-        Expression parsed = RegeReader.readExpression(printed, false);
+        Expression parsed = RegeReader.parse(printed, false).orElse(null);
         assertNotNull(parsed);
         // Semantically equivalent, structurally different
     }
@@ -351,7 +351,7 @@ class PrettyPrinterRoundtripTest {
         String printed = PrettyPrinter.print(expr, true);
         assertEquals("τ[a]⋅τ[b]", printed);
         
-        Expression parsed = RegeReader.readExpression(printed, false);
+        Expression parsed = RegeReader.parse(printed, false).orElse(null);
         assertEquals(expr, parsed);
     }
 }

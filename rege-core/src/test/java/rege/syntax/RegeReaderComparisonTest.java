@@ -16,8 +16,8 @@ class RegeReaderComparisonTest {
     void demonstrateConcatenationDifference() {
         String input = "τ[a].τ[b].τ[c]";
         
-        Expression right = RegeReader.readExpression(input, false);
-        Expression left = RegeReaderLeft.readExpression(input, false);
+        Expression right = RegeReader.parse(input, false).orElse(null);
+        Expression left = RegeReaderLeft.parse(input, false).orElse(null);
         
         // They should NOT be equal (different structures)
         assertNotEquals(right, left, "Different associativity should produce different structures");
@@ -43,8 +43,8 @@ class RegeReaderComparisonTest {
     void demonstrateUnionDifference() {
         String input = "τ[a]|τ[b]|τ[c]";
         
-        Expression right = RegeReader.readExpression(input, false);
-        Expression left = RegeReaderLeft.readExpression(input, false);
+        Expression right = RegeReader.parse(input, false).orElse(null);
+        Expression left = RegeReaderLeft.parse(input, false).orElse(null);
         
         // They should NOT be equal (different structures)
         assertNotEquals(right, left);
@@ -70,8 +70,8 @@ class RegeReaderComparisonTest {
     void demonstrateLongChainDifference() {
         String input = "τ[a].τ[b].τ[c].τ[d]";
         
-        Expression right = RegeReader.readExpression(input, false);
-        Expression left = RegeReaderLeft.readExpression(input, false);
+        Expression right = RegeReader.parse(input, false).orElse(null);
+        Expression left = RegeReaderLeft.parse(input, false).orElse(null);
         
         // Count nesting depth
         int rightDepth = getLeftDepth(right);
@@ -102,8 +102,8 @@ class RegeReaderComparisonTest {
         
         System.out.println("✓ Semantic equivalence with smart constructors:");
         for (String input : equivalentInputs) {
-            Expression right = RegeReader.readExpression(input, true);
-            Expression left = RegeReaderLeft.readExpression(input, true);
+            Expression right = RegeReader.parse(input, true).orElse(null);
+            Expression left = RegeReaderLeft.parse(input, true).orElse(null);
             assertEquals(right, left, "Smart constructors should produce identical results for: " + input);
             System.out.println("  " + input + " → " + formatExpression(right));
         }
@@ -114,8 +114,8 @@ class RegeReaderComparisonTest {
         // Precedence should be the same in both parsers
         String input = "τ[a]|τ[b].τ[c]*";
         
-        Expression right = RegeReader.readExpression(input, false);
-        Expression left = RegeReaderLeft.readExpression(input, false);
+        Expression right = RegeReader.parse(input, false).orElse(null);
+        Expression left = RegeReaderLeft.parse(input, false).orElse(null);
         
         // Both should parse as: a | (b . (c*))
         // i.e., Union at root, Concatenation on one side, Star deepest

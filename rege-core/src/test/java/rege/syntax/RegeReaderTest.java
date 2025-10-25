@@ -15,81 +15,81 @@ class RegeReaderTest {
     
     @Test
     void testReadEmpty() {
-        Expression result = RegeReader.readExpression("∅");
+        Expression result = RegeReader.parse("∅").orElse(null);
         assertEquals(Expression.EMPTY, result);
     }
     
     @Test
     void testReadEpsilon() {
-        Expression result = RegeReader.readExpression("ϵ");
+        Expression result = RegeReader.parse("ϵ").orElse(null);
         assertEquals(Expression.EPSILON, result);
     }
     
     @Test
     void testReadTokenWithTau() {
-        Expression result = RegeReader.readExpression("τ[a]");
+        Expression result = RegeReader.parse("τ[a]").orElse(null);
         assertEquals(new Token("a"), result);
         
-        result = RegeReader.readExpression("τ[b]");
+        result = RegeReader.parse("τ[b]").orElse(null);
         assertEquals(new Token("b"), result);
     }
     
     @Test
     void testReadTokenWithT() {
-        Expression result = RegeReader.readExpression("t[a]");
+        Expression result = RegeReader.parse("t[a]").orElse(null);
         assertEquals(new Token("a"), result);
         
-        result = RegeReader.readExpression("t[b]");
+        result = RegeReader.parse("t[b]").orElse(null);
         assertEquals(new Token("b"), result);
     }
     
     @Test
     void testReadTokenWithEscape() {
         // Escape sequences are processed: \] becomes ]
-        Expression result = RegeReader.readExpression("τ[abc\\]d]");
+        Expression result = RegeReader.parse("τ[abc\\]d]").orElse(null);
         assertEquals(new Token("abc]d"), result);
     }
     
     @Test
     void testReadTokenEscapeNewline() {
-        Expression result = RegeReader.readExpression("τ[hello\\nworld]");
+        Expression result = RegeReader.parse("τ[hello\\nworld]").orElse(null);
         assertEquals(new Token("hello\nworld"), result);
     }
     
     @Test
     void testReadTokenEscapeTab() {
-        Expression result = RegeReader.readExpression("τ[a\\tb]");
+        Expression result = RegeReader.parse("τ[a\\tb]").orElse(null);
         assertEquals(new Token("a\tb"), result);
     }
     
     @Test
     void testReadTokenEscapeBackslash() {
-        Expression result = RegeReader.readExpression("τ[a\\\\b]");
+        Expression result = RegeReader.parse("τ[a\\\\b]").orElse(null);
         assertEquals(new Token("a\\b"), result);
     }
     
     @Test
     void testReadTokenEscapeOpenBracket() {
-        Expression result = RegeReader.readExpression("τ[a\\[b]");
+        Expression result = RegeReader.parse("τ[a\\[b]").orElse(null);
         assertEquals(new Token("a[b"), result);
     }
     
     @Test
     void testReadTokenMultipleEscapes() {
-        Expression result = RegeReader.readExpression("τ[\\n\\t\\]\\\\]");
+        Expression result = RegeReader.parse("τ[\\n\\t\\]\\\\]").orElse(null);
         assertEquals(new Token("\n\t]\\"), result);
     }
     
     @Test
     void testReadTokenLongValue() {
-        Expression result = RegeReader.readExpression("τ[hello world]");
+        Expression result = RegeReader.parse("τ[hello world]").orElse(null);
         assertEquals(new Token("hello world"), result);
     }
     
     @Test
     void testReadTokenEmpty() {
         // Empty token value τ[] should be parsed as epsilon, not Token("")
-        Expression result = RegeReader.readExpression("τ[]");
+        Expression result = RegeReader.parse("τ[]").orElse(null);
         assertEquals(Expression.EPSILON, result);
     }
     
@@ -97,33 +97,33 @@ class RegeReaderTest {
     
     @Test
     void testIgnoreSpacesAroundEmpty() {
-        assertEquals(Expression.EMPTY, RegeReader.readExpression(" ∅"));
-        assertEquals(Expression.EMPTY, RegeReader.readExpression("∅ "));
-        assertEquals(Expression.EMPTY, RegeReader.readExpression(" ∅ "));
+        assertEquals(Expression.EMPTY, RegeReader.parse(" ∅").orElse(null));
+        assertEquals(Expression.EMPTY, RegeReader.parse("∅ ").orElse(null));
+        assertEquals(Expression.EMPTY, RegeReader.parse(" ∅ ").orElse(null));
     }
     
     @Test
     void testIgnoreTabsAroundEmpty() {
-        assertEquals(Expression.EMPTY, RegeReader.readExpression("\t∅"));
-        assertEquals(Expression.EMPTY, RegeReader.readExpression("∅\t"));
-        assertEquals(Expression.EMPTY, RegeReader.readExpression("\t∅\t"));
+        assertEquals(Expression.EMPTY, RegeReader.parse("\t∅").orElse(null));
+        assertEquals(Expression.EMPTY, RegeReader.parse("∅\t").orElse(null));
+        assertEquals(Expression.EMPTY, RegeReader.parse("\t∅\t").orElse(null));
     }
     
     @Test
     void testIgnoreSpacesInConcatenation() {
-        Expression result = RegeReader.readExpression("∅   ⋅τ[a]", false);
+        Expression result = RegeReader.parse("∅   ⋅τ[a]", false).orElse(null);
         assertEquals(new Concatenation(Expression.EMPTY, new Token("a")), result);
         
-        result = RegeReader.readExpression("∅\t⋅τ[a]", false);
+        result = RegeReader.parse("∅\t⋅τ[a]", false).orElse(null);
         assertEquals(new Concatenation(Expression.EMPTY, new Token("a")), result);
         
-        result = RegeReader.readExpression("∅\t⋅    τ[a]", false);
+        result = RegeReader.parse("∅\t⋅    τ[a]", false).orElse(null);
         assertEquals(new Concatenation(Expression.EMPTY, new Token("a")), result);
     }
     
     @Test
     void testSpaceInToken() {
-        Expression result = RegeReader.readExpression("τ[a] | τ [b]");
+        Expression result = RegeReader.parse("τ[a] | τ [b]").orElse(null);
         assertEquals(new Union(new Token("a"), new Token("b")), result);
     }
     
@@ -131,25 +131,25 @@ class RegeReaderTest {
     
     @Test
     void testReadConcatenationImplicit() {
-        Expression result = RegeReader.readExpression("∅ϵ", false);
+        Expression result = RegeReader.parse("∅ϵ", false).orElse(null);
         assertEquals(new Concatenation(Expression.EMPTY, Expression.EPSILON), result);
     }
     
     @Test
     void testReadConcatenationDot() {
-        Expression result = RegeReader.readExpression("∅.ϵ", false);
+        Expression result = RegeReader.parse("∅.ϵ", false).orElse(null);
         assertEquals(new Concatenation(Expression.EMPTY, Expression.EPSILON), result);
     }
     
     @Test
     void testReadConcatenationCdot() {
-        Expression result = RegeReader.readExpression("∅⋅ϵ", false);
+        Expression result = RegeReader.parse("∅⋅ϵ", false).orElse(null);
         assertEquals(new Concatenation(Expression.EMPTY, Expression.EPSILON), result);
     }
     
     @Test
     void testReadMultipleConcatenations() {
-        Expression result = RegeReader.readExpression("τ[a].τ[b].τ[c]", false);
+        Expression result = RegeReader.parse("τ[a].τ[b].τ[c]", false).orElse(null);
         // Should parse as τ[a]⋅(τ[b]⋅τ[c]) (right-associative)
         assertTrue(result instanceof Concatenation);
         Concatenation outer = (Concatenation) result;
@@ -161,19 +161,19 @@ class RegeReaderTest {
     
     @Test
     void testReadUnionPipe() {
-        Expression result = RegeReader.readExpression("∅|ϵ", false);
+        Expression result = RegeReader.parse("∅|ϵ", false).orElse(null);
         assertEquals(new Union(Expression.EMPTY, Expression.EPSILON), result);
     }
     
     @Test
     void testReadUnionCup() {
-        Expression result = RegeReader.readExpression("∅ ∪ ϵ", false);
+        Expression result = RegeReader.parse("∅ ∪ ϵ", false).orElse(null);
         assertEquals(new Union(Expression.EMPTY, Expression.EPSILON), result);
     }
     
     @Test
     void testReadMultipleUnions() {
-        Expression result = RegeReader.readExpression("τ[a]|τ[b]|τ[c]", false);
+        Expression result = RegeReader.parse("τ[a]|τ[b]|τ[c]", false).orElse(null);
         // Should parse as τ[a]|(τ[b]|τ[c]) (right-associative)
         assertTrue(result instanceof Union);
         Union outer = (Union) result;
@@ -186,13 +186,13 @@ class RegeReaderTest {
     @Test
     void testReadKleeneStar() {
         // ϵ* with smart constructors should simplify to ϵ
-        Expression result = RegeReader.readExpression("ϵ*");
+        Expression result = RegeReader.parse("ϵ*").orElse(null);
         assertEquals(Expression.EPSILON, result);
     }
     
     @Test
     void testReadDoubleKleeneStar() {
-        Expression result = RegeReader.readExpression("τ[a]**", false);
+        Expression result = RegeReader.parse("τ[a]**", false).orElse(null);
         assertTrue(result instanceof KleeneStar);
         KleeneStar outer = (KleeneStar) result;
         assertTrue(outer.expression() instanceof KleeneStar);
@@ -204,14 +204,14 @@ class RegeReaderTest {
     
     @Test
     void testReadParensSimple() {
-        Expression result = RegeReader.readExpression("(ϵ)", false);
+        Expression result = RegeReader.parse("(ϵ)", false).orElse(null);
         assertEquals(Expression.EPSILON, result);
     }
     
     @Test
     void testReadParensWithUnion() {
         // ϵ(ϵ|ϵ) is implicit concatenation: ϵ⋅(ϵ|ϵ) right-associative
-        Expression result = RegeReader.readExpression("ϵ(ϵ|ϵ)", false);
+        Expression result = RegeReader.parse("ϵ(ϵ|ϵ)", false).orElse(null);
         assertEquals(
             new Concatenation(Expression.EPSILON, new Union(Expression.EPSILON, Expression.EPSILON)),
             result
@@ -221,14 +221,14 @@ class RegeReaderTest {
     @Test
     void testReadParensPrecedence() {
         // ϵϵ|ϵ parses as (ϵ⋅ϵ)|ϵ due to standard precedence (concat > union)
-        Expression result1 = RegeReader.readExpression("ϵϵ|ϵ", false);
+        Expression result1 = RegeReader.parse("ϵϵ|ϵ", false).orElse(null);
         assertEquals(
             new Union(new Concatenation(Expression.EPSILON, Expression.EPSILON), Expression.EPSILON),
             result1
         );
         
         // (ϵϵ)|ϵ explicitly groups the concatenation (same result)
-        Expression result2 = RegeReader.readExpression("(ϵϵ)|ϵ", false);
+        Expression result2 = RegeReader.parse("(ϵϵ)|ϵ", false).orElse(null);
         assertEquals(
             new Union(new Concatenation(Expression.EPSILON, Expression.EPSILON), Expression.EPSILON),
             result2
@@ -237,13 +237,13 @@ class RegeReaderTest {
     
     @Test
     void testReadNestedParens() {
-        Expression result = RegeReader.readExpression("((τ[a]))", false);
+        Expression result = RegeReader.parse("((τ[a]))", false).orElse(null);
         assertEquals(new Token("a"), result);
     }
     
     @Test
     void testReadComplexParens() {
-        Expression result = RegeReader.readExpression("(τ[a]|τ[b])⋅(τ[c]|τ[d])", false);
+        Expression result = RegeReader.parse("(τ[a]|τ[b])⋅(τ[c]|τ[d])", false).orElse(null);
         assertTrue(result instanceof Concatenation);
         Concatenation concat = (Concatenation) result;
         assertTrue(concat.lhs() instanceof Union);
@@ -254,58 +254,58 @@ class RegeReaderTest {
     
     @Test
     void testSmartUnionIdempotent() {
-        Expression result = RegeReader.readExpression("ϵ|ϵ", true);
+        Expression result = RegeReader.parse("ϵ|ϵ", true).orElse(null);
         assertEquals(Expression.EPSILON, result);
     }
     
     @Test
     void testSmartUnionIdentityLeft() {
-        Expression result = RegeReader.readExpression("ϵ|∅", true);
+        Expression result = RegeReader.parse("ϵ|∅", true).orElse(null);
         assertEquals(Expression.EPSILON, result);
     }
     
     @Test
     void testSmartUnionIdentityRight() {
-        Expression result = RegeReader.readExpression("∅|ϵ", true);
+        Expression result = RegeReader.parse("∅|ϵ", true).orElse(null);
         assertEquals(Expression.EPSILON, result);
     }
     
     @Test
     void testSmartUnionTokens() {
-        Expression result = RegeReader.readExpression("τ[a]|τ[a]", true);
+        Expression result = RegeReader.parse("τ[a]|τ[a]", true).orElse(null);
         assertEquals(new Token("a"), result);
         
-        result = RegeReader.readExpression("τ[a]|τ[b]", true);
+        result = RegeReader.parse("τ[a]|τ[b]", true).orElse(null);
         assertTrue(result instanceof Union);
     }
     
     @Test
     void testSmartConcatenationAnnihilatorLeft() {
-        Expression result = RegeReader.readExpression("∅τ[a]", true);
+        Expression result = RegeReader.parse("∅τ[a]", true).orElse(null);
         assertEquals(Expression.EMPTY, result);
     }
     
     @Test
     void testSmartConcatenationAnnihilatorRight() {
-        Expression result = RegeReader.readExpression("τ[a]∅", true);
+        Expression result = RegeReader.parse("τ[a]∅", true).orElse(null);
         assertEquals(Expression.EMPTY, result);
     }
     
     @Test
     void testSmartConcatenationIdentityLeft() {
-        Expression result = RegeReader.readExpression("ϵτ[a]", true);
+        Expression result = RegeReader.parse("ϵτ[a]", true).orElse(null);
         assertEquals(new Token("a"), result);
     }
     
     @Test
     void testSmartConcatenationIdentityRight() {
-        Expression result = RegeReader.readExpression("τ[a]ϵ", true);
+        Expression result = RegeReader.parse("τ[a]ϵ", true).orElse(null);
         assertEquals(new Token("a"), result);
     }
     
     @Test
     void testSmartKleeneStar() {
-        Expression result = RegeReader.readExpression("τ[a]**", true);
+        Expression result = RegeReader.parse("τ[a]**", true).orElse(null);
         assertTrue(result instanceof KleeneStar);
         KleeneStar star = (KleeneStar) result;
         assertEquals(new Token("a"), star.expression());
@@ -313,13 +313,13 @@ class RegeReaderTest {
     
     @Test
     void testSmartKleeneStarEmpty() {
-        Expression result = RegeReader.readExpression("∅*", true);
+        Expression result = RegeReader.parse("∅*", true).orElse(null);
         assertEquals(Expression.EPSILON, result);
     }
     
     @Test
     void testSmartKleeneStarEpsilon() {
-        Expression result = RegeReader.readExpression("ϵ*", true);
+        Expression result = RegeReader.parse("ϵ*", true).orElse(null);
         assertEquals(Expression.EPSILON, result);
     }
     
@@ -328,7 +328,7 @@ class RegeReaderTest {
     @Test
     void testComplexExpression1() {
         // (a|b)*
-        Expression result = RegeReader.readExpression("(τ[a]|τ[b])*", false);
+        Expression result = RegeReader.parse("(τ[a]|τ[b])*", false).orElse(null);
         assertTrue(result instanceof KleeneStar);
         KleeneStar star = (KleeneStar) result;
         assertTrue(star.expression() instanceof Union);
@@ -337,7 +337,7 @@ class RegeReaderTest {
     @Test
     void testComplexExpression2() {
         // a⋅b|c⋅d should parse as (a⋅b)|(c⋅d) due to standard precedence
-        Expression result = RegeReader.readExpression("τ[a]⋅τ[b]|τ[c]⋅τ[d]", false);
+        Expression result = RegeReader.parse("τ[a]⋅τ[b]|τ[c]⋅τ[d]", false).orElse(null);
         assertTrue(result instanceof Union);
         Union union = (Union) result;
         assertTrue(union.lhs() instanceof Concatenation);
@@ -347,7 +347,7 @@ class RegeReaderTest {
     @Test
     void testComplexExpression3() {
         // (a|b)⋅(c|d)*
-        Expression result = RegeReader.readExpression("(τ[a]|τ[b])⋅(τ[c]|τ[d])*", false);
+        Expression result = RegeReader.parse("(τ[a]|τ[b])⋅(τ[c]|τ[d])*", false).orElse(null);
         assertTrue(result instanceof Concatenation);
         Concatenation concat = (Concatenation) result;
         assertTrue(concat.lhs() instanceof Union);
@@ -357,14 +357,14 @@ class RegeReaderTest {
     @Test
     void testComplexExpression4() {
         // a*b*c*
-        Expression result = RegeReader.readExpression("τ[a]*τ[b]*τ[c]*", false);
+        Expression result = RegeReader.parse("τ[a]*τ[b]*τ[c]*", false).orElse(null);
         assertTrue(result instanceof Concatenation);
     }
     
     @Test
     void testComplexExpressionSmart() {
         // (ϵ|∅)* with smart constructors should simplify
-        Expression result = RegeReader.readExpression("(ϵ|∅)*", true);
+        Expression result = RegeReader.parse("(ϵ|∅)*", true).orElse(null);
         assertEquals(Expression.EPSILON, result); // (ϵ|∅) = ϵ, ϵ* = ϵ
     }
     
@@ -372,31 +372,31 @@ class RegeReaderTest {
     
     @Test
     void testEmptyString() {
-        Expression result = RegeReader.readExpression("");
+        Expression result = RegeReader.parse("").orElse(null);
         assertNull(result);
     }
     
     @Test
     void testOnlyWhitespace() {
-        Expression result = RegeReader.readExpression("   ");
+        Expression result = RegeReader.parse("   ").orElse(null);
         assertNull(result);
     }
     
     @Test
     void testInvalidToken() {
-        Expression result = RegeReader.readExpression("τ[abc");
+        Expression result = RegeReader.parse("τ[abc").orElse(null);
         assertNull(result);
     }
     
     @Test
     void testInvalidParens() {
-        Expression result = RegeReader.readExpression("(τ[a]");
+        Expression result = RegeReader.parse("(τ[a]").orElse(null);
         assertNull(result);
     }
     
     @Test
     void testUnexpectedCharacter() {
-        Expression result = RegeReader.readExpression("@");
+        Expression result = RegeReader.parse("@").orElse(null);
         assertNull(result);
     }
     
@@ -405,14 +405,14 @@ class RegeReaderTest {
     @Test
     void testEmailLikePattern() {
         // username@domain
-        Expression result = RegeReader.readExpression("τ[user]⋅τ[@]⋅τ[domain]", false);
+        Expression result = RegeReader.parse("τ[user]⋅τ[@]⋅τ[domain]", false).orElse(null);
         assertTrue(result instanceof Concatenation);
     }
     
     @Test
     void testOptionalPattern() {
         // a(b|ϵ)c means "abc" or "ac" - parses as a⋅((b|ϵ)⋅c) (right-associative)
-        Expression result = RegeReader.readExpression("τ[a]⋅(τ[b]|ϵ)⋅τ[c]", false);
+        Expression result = RegeReader.parse("τ[a]⋅(τ[b]|ϵ)⋅τ[c]", false).orElse(null);
         assertTrue(result instanceof Concatenation);
         Concatenation outer = (Concatenation) result;
         assertEquals(new Token("a"), outer.lhs());
@@ -422,7 +422,7 @@ class RegeReaderTest {
     @Test
     void testRepetitionPattern() {
         // (ab)* - zero or more repetitions of "ab"
-        Expression result = RegeReader.readExpression("(τ[a]⋅τ[b])*", false);
+        Expression result = RegeReader.parse("(τ[a]⋅τ[b])*", false).orElse(null);
         assertTrue(result instanceof KleeneStar);
         KleeneStar star = (KleeneStar) result;
         assertTrue(star.expression() instanceof Concatenation);
@@ -431,7 +431,7 @@ class RegeReaderTest {
     @Test
     void testAlternativesPattern() {
         // (yes|no|maybe)
-        Expression result = RegeReader.readExpression("(τ[yes]|τ[no]|τ[maybe])", false);
+        Expression result = RegeReader.parse("(τ[yes]|τ[no]|τ[maybe])", false).orElse(null);
         assertTrue(result instanceof Union);
     }
     
@@ -440,7 +440,7 @@ class RegeReaderTest {
     @Test
     void testPrecedenceStarHighest() {
         // a*b should parse as (a*)⋅b, not (a⋅b)*
-        Expression result = RegeReader.readExpression("τ[a]*τ[b]", false);
+        Expression result = RegeReader.parse("τ[a]*τ[b]", false).orElse(null);
         assertTrue(result instanceof Concatenation);
         Concatenation concat = (Concatenation) result;
         assertTrue(concat.lhs() instanceof KleeneStar);
@@ -450,7 +450,7 @@ class RegeReaderTest {
     @Test
     void testPrecedenceConcatHigherThanUnion() {
         // a⋅b|c should parse as (a⋅b)|c, not a⋅(b|c)
-        Expression result = RegeReader.readExpression("τ[a]τ[b]|τ[c]", false);
+        Expression result = RegeReader.parse("τ[a]τ[b]|τ[c]", false).orElse(null);
         // With correct precedence: concat binds tighter than union
         assertTrue(result instanceof Union);
         Union union = (Union) result;
@@ -461,7 +461,7 @@ class RegeReaderTest {
     @Test
     void testLeftAssociativityUnion() {
         // a|b|c should parse as a|(b|c) (right-associative)
-        Expression result = RegeReader.readExpression("τ[a]|τ[b]|τ[c]", false);
+        Expression result = RegeReader.parse("τ[a]|τ[b]|τ[c]", false).orElse(null);
         assertTrue(result instanceof Union);
         Union outer = (Union) result;
         assertEquals(new Token("a"), outer.lhs());
@@ -471,7 +471,7 @@ class RegeReaderTest {
     @Test
     void testLeftAssociativityConcat() {
         // abc should parse as a⋅(b⋅c) (right-associative)
-        Expression result = RegeReader.readExpression("τ[a]τ[b]τ[c]", false);
+        Expression result = RegeReader.parse("τ[a]τ[b]τ[c]", false).orElse(null);
         assertTrue(result instanceof Concatenation);
         Concatenation outer = (Concatenation) result;
         assertEquals(new Token("a"), outer.lhs());
@@ -482,19 +482,19 @@ class RegeReaderTest {
     
     @Test
     void testUnicodeInToken() {
-        Expression result = RegeReader.readExpression("τ[こんにちは]");
+        Expression result = RegeReader.parse("τ[こんにちは]").orElse(null);
         assertEquals(new Token("こんにちは"), result);
     }
     
     @Test
     void testEmojiInToken() {
-        Expression result = RegeReader.readExpression("τ[😀🎉]");
+        Expression result = RegeReader.parse("τ[😀🎉]").orElse(null);
         assertEquals(new Token("😀🎉"), result);
     }
     
     @Test
     void testSpecialCharsInToken() {
-        Expression result = RegeReader.readExpression("τ[!@#$%^&*()]");
+        Expression result = RegeReader.parse("τ[!@#$%^&*()]").orElse(null);
         assertEquals(new Token("!@#$%^&*()"), result);
     }
     
@@ -503,7 +503,7 @@ class RegeReaderTest {
     @Test
     void testPrecedenceUnionLowest() {
         // a|b.c should parse as a|(b.c)
-        Expression result = RegeReader.readExpression("τ[a]|τ[b].τ[c]", false);
+        Expression result = RegeReader.parse("τ[a]|τ[b].τ[c]", false).orElse(null);
         assertTrue(result instanceof Union);
         Union union = (Union) result;
         assertEquals(new Token("a"), union.lhs());
@@ -513,7 +513,7 @@ class RegeReaderTest {
     @Test
     void testPrecedenceStarVsUnion() {
         // a*|b should parse as (a*)|b
-        Expression result = RegeReader.readExpression("τ[a]*|τ[b]", false);
+        Expression result = RegeReader.parse("τ[a]*|τ[b]", false).orElse(null);
         assertTrue(result instanceof Union);
         Union union = (Union) result;
         assertTrue(union.lhs() instanceof KleeneStar);
@@ -523,7 +523,7 @@ class RegeReaderTest {
     @Test
     void testPrecedenceComplexMultiOp() {
         // a*b|c*d should parse as ((a*).b)|((c*).d)
-        Expression result = RegeReader.readExpression("τ[a]*τ[b]|τ[c]*τ[d]", false);
+        Expression result = RegeReader.parse("τ[a]*τ[b]|τ[c]*τ[d]", false).orElse(null);
         assertTrue(result instanceof Union);
         Union union = (Union) result;
         
