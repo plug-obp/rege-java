@@ -48,10 +48,13 @@ import java.util.Objects;
  * }</pre>
  * 
  * @param value the token value (must be non-empty)
- * @throws IllegalArgumentException if value is empty
  */
 public record Token(String value) implements Terminal {
     
+    /**
+     * Compact constructor that validates the token value is non-null and non-empty.
+     * Empty tokens are prohibited to maintain mathematical consistency.
+     */
     public Token {
         Objects.requireNonNull(value, "Token value cannot be null");
         if (value.isEmpty()) {

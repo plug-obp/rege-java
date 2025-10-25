@@ -18,6 +18,11 @@ import java.util.Optional;
  *     "unexpected-char"
  * );
  * }</pre>
+ * 
+ * @param range the source range where the error occurred
+ * @param message the error message
+ * @param severity the severity level of the error
+ * @param code optional error code for categorization
  */
 public record ParseError(
     Range range,
@@ -45,12 +50,19 @@ public record ParseError(
             this.lspValue = lspValue;
         }
         
-        /** Get the LSP DiagnosticSeverity value. */
+        /**
+         * Get the LSP DiagnosticSeverity value.
+         * @return the LSP severity value (1-4)
+         */
         public int getLspValue() {
             return lspValue;
         }
     }
     
+    /**
+     * Compact constructor that validates all fields.
+     * Ensures range, message, severity, and code are non-null and message is not blank.
+     */
     public ParseError {
         Objects.requireNonNull(range, "range cannot be null");
         Objects.requireNonNull(message, "message cannot be null");
@@ -63,6 +75,8 @@ public record ParseError(
     
     /**
      * Create an ERROR-level parse error without an error code.
+     * @param range the source range where the error occurred
+     * @param message the error message
      */
     public ParseError(Range range, String message) {
         this(range, message, Severity.ERROR, Optional.empty());
@@ -70,6 +84,9 @@ public record ParseError(
     
     /**
      * Create a parse error with a severity but no error code.
+     * @param range the source range where the error occurred
+     * @param message the error message
+     * @param severity the severity level
      */
     public ParseError(Range range, String message, Severity severity) {
         this(range, message, severity, Optional.empty());
@@ -77,6 +94,9 @@ public record ParseError(
     
     /**
      * Create an ERROR-level parse error with an error code.
+     * @param range the source range where the error occurred
+     * @param message the error message
+     * @param code the error code for categorization
      */
     public ParseError(Range range, String message, String code) {
         this(range, message, Severity.ERROR, Optional.of(code));

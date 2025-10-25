@@ -38,6 +38,9 @@ public sealed interface ParseResult<T> {
      * @param <T> the type of the value
      */
     record Success<T>(T value) implements ParseResult<T> {
+        /**
+         * Compact constructor that validates the value is non-null.
+         */
         public Success {
             Objects.requireNonNull(value, "value cannot be null");
         }
@@ -51,6 +54,9 @@ public sealed interface ParseResult<T> {
      * @param <T> the type that would have been returned on success
      */
     record Failure<T>(List<ParseError> errors, String source) implements ParseResult<T> {
+        /**
+         * Compact constructor that validates errors is non-null and non-empty.
+         */
         public Failure {
             Objects.requireNonNull(errors, "errors cannot be null");
             Objects.requireNonNull(source, "source cannot be null");
@@ -62,6 +68,7 @@ public sealed interface ParseResult<T> {
     
     /**
      * Check if this is a successful parse result.
+     * @return true if this is a Success, false otherwise
      */
     default boolean isSuccess() {
         return this instanceof Success<T>;
@@ -69,6 +76,7 @@ public sealed interface ParseResult<T> {
     
     /**
      * Check if this is a failed parse result.
+     * @return true if this is a Failure, false otherwise
      */
     default boolean isFailure() {
         return this instanceof Failure<T>;
@@ -89,6 +97,7 @@ public sealed interface ParseResult<T> {
     
     /**
      * Get the value if successful, or return an empty Optional if failed.
+     * @return an Optional containing the value if successful, empty otherwise
      */
     default Optional<T> toOptional() {
         return switch (this) {

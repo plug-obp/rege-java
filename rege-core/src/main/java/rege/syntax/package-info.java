@@ -81,6 +81,7 @@
  * process these escapes, so token values contain the <i>interpreted</i> characters:
  * 
  * <table border="1">
+ *   <caption>Token Escape Sequences</caption>
  *   <tr><th>Escape</th><th>Character</th><th>Example</th></tr>
  *   <tr><td>\n</td><td>Newline</td><td>{@code τ[hello\nworld]} → Token("hello\nworld")</td></tr>
  *   <tr><td>\t</td><td>Tab</td><td>{@code τ[a\tb]} → Token("a\tb")</td></tr>
@@ -222,7 +223,7 @@
  * <h2>Simplifier</h2>
  * 
  * <h3>Algebraic Simplification</h3>
- * <p>{@link rege.syntax.Simplifier} is a visitor that recursively applies
+ * <p>The {@code Simplifier} visitor recursively applies
  * algebraic laws to simplify expressions:
  * 
  * <pre>{@code
@@ -282,7 +283,6 @@
  * @see rege.syntax.RegeReader
  * @see rege.syntax.RegeReaderLeft
  * @see rege.syntax.PrettyPrinter
- * @see rege.syntax.Simplifier
  * @see rege.syntax.model
  * @see rege.reader.infra
  */

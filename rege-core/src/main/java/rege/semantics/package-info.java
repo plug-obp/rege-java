@@ -14,6 +14,7 @@
  * <p>The {@link rege.semantics.Brzozowski} visitor implements these rules:
  * 
  * <table border="1">
+ *   <caption>Derivative Rules</caption>
  *   <tr><th>Expression</th><th>Derivative D<sub>a</sub>(E)</th></tr>
  *   <tr><td>∅</td><td>∅</td></tr>
  *   <tr><td>ε</td><td>∅</td></tr>
@@ -165,7 +166,7 @@
  * <p>This package implements the theory from:
  * <ul>
  *   <li>Brzozowski, J. A. (1964). "Derivatives of Regular Expressions"</li>
- *   <li>Owens, S., Reppy, J., & Turon, A. (2009). "Regular-expression derivatives re-examined"</li>
+ *   <li>Owens, S., Reppy, J., and Turon, A. (2009). "Regular expression derivatives re-examined"</li>
  * </ul>
  * 
  * <h3>Key Properties</h3>
@@ -189,7 +190,7 @@
  * <ul>
  *   <li>Caching derivatives in {@code RegeDependentSemantics}</li>
  *   <li>Hash-consing expression trees for structural sharing</li>
- *   <li>Using {@link rege.syntax.Simplifier} periodically</li>
+ *   <li>Using simplification periodically to prevent expression growth</li>
  * </ul>
  * 
  * @see rege.semantics.Brzozowski

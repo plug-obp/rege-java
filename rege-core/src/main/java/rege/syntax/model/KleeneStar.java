@@ -10,6 +10,9 @@ import java.util.Objects;
  */
 public record KleeneStar(Expression expression) implements Composite {
     
+    /**
+     * Compact constructor that validates the expression is non-null.
+     */
     public KleeneStar {
         Objects.requireNonNull(expression, "Expression cannot be null");
     }

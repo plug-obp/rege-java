@@ -139,12 +139,11 @@
  *     c
  * );
  * 
- * // Apply a visitor (e.g., Simplifier)
- * Expression simplified = pattern.accept(new Simplifier(), null);
+ * // Apply a visitor for simplification
+ * Expression simplified = pattern.simplify();
  * }</pre>
  * 
  * @see rege.syntax.model.Expression
  * @see rege.syntax.model.Visitor
- * @see rege.syntax.Simplifier
  */
 package rege.syntax.model;

@@ -136,6 +136,7 @@
  * </ul>
  * 
  * <h2>Usage Patterns</h2>
+ * <pre>{@code
  * Peekable input = new Peekable("hello");
  * Position start = input.position();
  * 

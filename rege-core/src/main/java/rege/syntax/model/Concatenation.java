@@ -11,6 +11,9 @@ import java.util.Objects;
  */
 public record Concatenation(Expression lhs, Expression rhs) implements Composite {
     
+    /**
+     * Compact constructor that validates both expressions are non-null.
+     */
     public Concatenation {
         Objects.requireNonNull(lhs, "Left-hand side expression cannot be null");
         Objects.requireNonNull(rhs, "Right-hand side expression cannot be null");

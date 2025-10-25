@@ -24,7 +24,9 @@ import java.util.Objects;
  */
 public class ParseException extends Exception {
     
+    /** The list of parse errors that caused this exception. */
     private final List<ParseError> errors;
+    /** The source text that failed to parse. */
     private final String source;
     
     /**
@@ -46,6 +48,7 @@ public class ParseException extends Exception {
     
     /**
      * Get the list of parse errors.
+     * @return the list of parse errors (never null or empty)
      */
     public List<ParseError> getErrors() {
         return errors;
@@ -53,6 +56,7 @@ public class ParseException extends Exception {
     
     /**
      * Get the source text that failed to parse.
+     * @return the source text
      */
     public String getSource() {
         return source;

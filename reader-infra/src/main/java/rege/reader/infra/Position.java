@@ -20,6 +20,9 @@ import java.util.Objects;
  */
 public record Position(int line, int column, int offset) implements Comparable<Position> {
     
+    /**
+     * Compact constructor that validates line, column, and offset values.
+     */
     public Position {
         if (line < 1) {
             throw new IllegalArgumentException("line must be >= 1, got: " + line);
@@ -33,7 +36,8 @@ public record Position(int line, int column, int offset) implements Comparable<P
     }
     
     /**
-     * Create a position at the start of input.
+     * Create a position at the start of input (line 1, column 1, offset 0).
+     * @return a position representing the start of input
      */
     public static Position start() {
         return new Position(1, 1, 0);

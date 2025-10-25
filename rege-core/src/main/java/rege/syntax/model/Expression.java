@@ -73,6 +73,7 @@ public sealed interface Expression permits Terminal, Composite {
     Expression EMPTY = Empty.instance();
     /**
      * Empty expression (matches nothing).
+     * @return the empty constant
      */
     default Expression empty() {
         return EMPTY;
@@ -84,13 +85,16 @@ public sealed interface Expression permits Terminal, Composite {
     Expression EPSILON = Epsilon.instance();
     /**
      * Epsilon expression (matches the empty string).
+     * @return the epsilon constant
      */
     default Expression epsilon() {
         return EPSILON;
     }
 
     /*
-     * Token
+     * Token factory method.
+     * @param value the token value (non-empty)
+     * @return a new Token expression
      */
     default Token token(String value) {
         return new Token(value);

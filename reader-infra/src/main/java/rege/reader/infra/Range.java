@@ -22,6 +22,9 @@ import java.util.Objects;
  */
 public record Range(Position start, Position end) {
     
+    /**
+     * Compact constructor that validates start and end positions.
+     */
     public Range {
         Objects.requireNonNull(start, "start position cannot be null");
         Objects.requireNonNull(end, "end position cannot be null");
@@ -35,6 +38,8 @@ public record Range(Position start, Position end) {
     /**
      * Create a zero-width range at the given position.
      * Useful for pointing to a specific location without spanning multiple characters.
+     * @param pos the position
+     * @return a range where start equals end
      */
     public static Range at(Position pos) {
         return new Range(pos, pos);
@@ -42,6 +47,8 @@ public record Range(Position start, Position end) {
     
     /**
      * Check if this range contains a position.
+     * @param pos the position to check
+     * @return true if the position is within this range (inclusive start, exclusive end)
      */
     public boolean contains(Position pos) {
         return start.compareTo(pos) <= 0 && pos.compareTo(end) < 0;
@@ -49,6 +56,7 @@ public record Range(Position start, Position end) {
     
     /**
      * Get the length of this range in characters.
+     * @return the number of characters between start and end
      */
     public int length() {
         return end.offset() - start.offset();
