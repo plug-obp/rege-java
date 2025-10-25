@@ -29,6 +29,29 @@ Generic parsing infrastructure for building text parsers:
 ./gradlew build
 ```
 
+## Installation
+
+Add to your `build.gradle`:
+
+```gradle
+repositories {
+    maven {
+        url = uri("https://maven.pkg.github.com/plug-obp/rege-java")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+        }
+    }
+}
+
+dependencies {
+    implementation 'org.obpcdl:rege-core:1.0.0-main.3.b2bb1c4'
+    implementation 'org.obpcdl:reader-infra:1.0.0-main.3.b2bb1c4'
+}
+```
+
+**Note:** GitHub Packages requires authentication. See [GitHub's documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry) for setup.
+
 ## Requirements
 
 - Java 23
