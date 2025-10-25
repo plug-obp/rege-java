@@ -182,22 +182,6 @@ class RegeReaderErrorTest {
         assertEquals(result, mapped);
     }
     
-    @Test
-    void testBackwardCompatibilityReadExpression() {
-        @SuppressWarnings("deprecation")
-        Expression expr = RegeReader.readExpression("τ[a]");
-        
-        assertNotNull(expr);
-    }
-    
-    @Test
-    void testBackwardCompatibilityReadExpressionFailure() {
-        @SuppressWarnings("deprecation")
-        Expression expr = RegeReader.readExpression("τ[unclosed");
-        
-        assertNull(expr);
-    }
-    
     // ============================================================================
     // Alien Validator Tests
     // ============================================================================

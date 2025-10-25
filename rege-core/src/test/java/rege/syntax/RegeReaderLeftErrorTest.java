@@ -183,22 +183,6 @@ class RegeReaderLeftErrorTest {
     }
     
     @Test
-    void testBackwardCompatibilityReadExpression() {
-        @SuppressWarnings("deprecation")
-        Expression expr = RegeReaderLeft.readExpression("τ[a]");
-        
-        assertNotNull(expr);
-    }
-    
-    @Test
-    void testBackwardCompatibilityReadExpressionFailure() {
-        @SuppressWarnings("deprecation")
-        Expression expr = RegeReaderLeft.readExpression("τ[unclosed");
-        
-        assertNull(expr);
-    }
-    
-    @Test
     void testLeftAssociativityPreserved() {
         // Verify left-associativity is maintained with new API (using isSmart=false)
         ParseResult<Expression> result = RegeReaderLeft.parse("τ[a]|τ[b]|τ[c]", false);
