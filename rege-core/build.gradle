@@ -24,55 +24,13 @@ test {
     useJUnitPlatform()
 }
 
-java {
-    withJavadocJar()
-    withSourcesJar()
-}
-
+// Publishing metadata (configuration inherited from root project)
 publishing {
     publications {
         maven(MavenPublication) {
-            groupId = 'org.obpcdl'
-            artifactId = project.name
-            // Version inherited from root project
-
-            from components.java
-
             pom {
                 name = 'Rege Core'
                 description = 'Type-safe regular expression framework with Brzozowski derivatives and sealed type hierarchies'
-                url = "https://github.com/${rootProject.ext.githubRepo}"
-                
-                licenses {
-                    license {
-                        name = 'MIT License'
-                        url = 'https://opensource.org/licenses/MIT'
-                    }
-                }
-                
-                developers {
-                    developer {
-                        id = 'plug-obp'
-                        name = 'OBPCDL'
-                    }
-                }
-                
-                scm {
-                    connection = "scm:git:git://github.com/${rootProject.ext.githubRepo}.git"
-                    developerConnection = "scm:git:ssh://github.com/${rootProject.ext.githubRepo}.git"
-                    url = "https://github.com/${rootProject.ext.githubRepo}"
-                }
-            }
-        }
-    }
-    
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/${rootProject.ext.githubRepo}")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
             }
         }
     }
