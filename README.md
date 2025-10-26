@@ -1,7 +1,7 @@
 # Rege
 
 ![Build Status](https://github.com/plug-obp/rege-java/actions/workflows/build-and-publish.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-462%20passing-success)
+![Tests](https://img.shields.io/badge/tests-458%20passing-success)
 ![Java](https://img.shields.io/badge/java-23-blue)
 
 A Java 23 implementation of regular expression syntax and semantics with formal language properties.
