@@ -37,6 +37,25 @@ def getVersionSuffix() {
     return "-${sanitizedBranch}.${runNumber}.${gitHash}"
 }
 
+// Get GitHub repository from git config or environment
+def getGitHubRepository() {
+    // Try environment variable first (CI/CD)
+    def envRepo = System.getenv("GITHUB_REPOSITORY")
+    if (envRepo) return envRepo
+    
+    // Fall back to git config
+    try {
+        def origin = 'git config --get remote.origin.url'.execute().text.trim()
+        // Handle both HTTPS and SSH URLs
+        // HTTPS: https://github.com/plug-obp/rege-java.git
+        // SSH: git@github.com:plug-obp/rege-java.git
+        def matcher = origin =~ /github\.com[:\/](.+?)(?:\.git)?$/
+        return matcher ? matcher[0][1] : 'plug-obp/rege-java'
+    } catch (Exception e) {
+        return 'plug-obp/rege-java'
+    }
+}
+
 // Apply dynamic version to all projects
 def baseVersion = project.findProperty('version') ?: '1.0.0'
 def fullVersion = "${baseVersion}${getVersionSuffix()}"
@@ -45,6 +64,9 @@ allprojects {
     group = 'org.obpcdl'
     version = fullVersion
 }
+
+// Make GitHub repository available to all projects
+ext.githubRepo = getGitHubRepository()
 
 // Display computed version
 gradle.projectsLoaded {

@@ -41,7 +41,7 @@ publishing {
             pom {
                 name = 'Rege Core'
                 description = 'Type-safe regular expression framework with Brzozowski derivatives and sealed type hierarchies'
-                url = 'https://github.com/plug-obp/rege-java'
+                url = "https://github.com/${rootProject.ext.githubRepo}"
                 
                 licenses {
                     license {
@@ -58,9 +58,9 @@ publishing {
                 }
                 
                 scm {
-                    connection = 'scm:git:git://github.com/plug-obp/rege-java.git'
-                    developerConnection = 'scm:git:ssh://github.com/plug-obp/rege-java.git'
-                    url = 'https://github.com/plug-obp/rege-java'
+                    connection = "scm:git:git://github.com/${rootProject.ext.githubRepo}.git"
+                    developerConnection = "scm:git:ssh://github.com/${rootProject.ext.githubRepo}.git"
+                    url = "https://github.com/${rootProject.ext.githubRepo}"
                 }
             }
         }
@@ -69,7 +69,7 @@ publishing {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/${System.getenv("GITHUB_REPOSITORY") ?: "plug-obp/rege-java"}")
+            url = uri("https://maven.pkg.github.com/${rootProject.ext.githubRepo}")
             credentials {
                 username = System.getenv("GITHUB_ACTOR")
                 password = System.getenv("GITHUB_TOKEN")
