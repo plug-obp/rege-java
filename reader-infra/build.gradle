@@ -32,7 +32,7 @@ publishing {
     publications {
         maven(MavenPublication) {
             groupId = 'org.obpcdl'
-            artifactId = 'reader-infra'
+            artifactId = project.name
             // Version inherited from root project
 
             from components.java

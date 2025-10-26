@@ -33,7 +33,7 @@ publishing {
     publications {
         maven(MavenPublication) {
             groupId = 'org.obpcdl'
-            artifactId = 'rege-core'
+            artifactId = project.name
             // Version inherited from root project
 
             from components.java
