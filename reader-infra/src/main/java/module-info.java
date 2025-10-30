@@ -1,3 +1,3 @@
-module rege.language.reader.infra {
+module reader.infra {
     exports rege.reader.infra;
 }
