@@ -20,7 +20,7 @@ def getVersionSuffix() {
                 .replaceAll(/[^a-zA-Z0-9\-.]/, '-')
                 .replaceAll(/--+/, '-')
                 .toLowerCase()
-            return "-${sanitizedBranch}.${gitHash}"
+            return "-${sanitizedBranch}.local+${gitHash}"
         } catch (Exception e) {
             return "-local.dev"
         }
@@ -34,7 +34,7 @@ def getVersionSuffix() {
         .replaceAll(/--+/, '-')
         .toLowerCase()
     
-    return "-${sanitizedBranch}.${runNumber}.${gitHash}"
+    return "-${sanitizedBranch}.${runNumber}+${gitHash}"
 }
 
 // Get GitHub repository from git config or environment
