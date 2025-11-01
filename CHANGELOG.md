@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-11-01
+
+### Added
+
+- **New Module**: `rege-modelchecker` - A regular expression model-checker for verifying properties
+  - `StepModelChecker` class for model checking with semantic relations
+  - Integration with OBP3 model checking framework
+  - Support for atomic proposition evaluation
+  - Configurable traversal algorithms (DFS) and depth bounds
+  - `DependentSemantics` implementation for property checking
+- Java Platform Module System (JPMS) support
+  - Added `module-info.java` to `reader-infra` module
+  - Added `module-info.java` to `rege-core` module
+  - Added `module-info.java` to `rege-modelchecker` module
+
+### Changed
+
+- Refactored build configuration
+  - Consolidated publishing configuration in root `build.gradle`
+  - Improved multi-module Gradle setup
+  - Automatic git repository extraction for publishing
+  - Enhanced versioning with git hash metadata and local build support
+- Updated CI/CD pipeline
+  - Refined artifact publishing patterns (`*/build/libs/*.jar`)
+  - Added token and actor configuration
+
+### Fixed
+
+- Minor code quality improvements in `RegeDependentSemantics`
+- Updated `DeepAbsorptionDemo` for better demonstration clarity
+
 ## [1.0.0] - 2025-10-25
 
 ### Added
@@ -50,5 +81,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Versioning strategy documentation
 - Package-level JavaDoc with usage examples
 
-[Unreleased]: https://github.com/plug-obp/rege-java/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/plug-obp/rege-java/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/plug-obp/rege-java/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/plug-obp/rege-java/releases/tag/v1.0.0
