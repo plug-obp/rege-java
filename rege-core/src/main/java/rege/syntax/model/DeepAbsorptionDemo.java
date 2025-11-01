@@ -1,5 +1,7 @@
 package rege.syntax.model;
 
+import static rege.syntax.model.Simplifier.simplify;
+
 /**
  * Demonstration of deep absorption in the Simplifier.
  * This class shows how the Simplifier recursively applies
@@ -31,7 +33,7 @@ public class DeepAbsorptionDemo {
         Union ab = new Union(a, b);
         Union aab = new Union(a, ab);
         System.out.println("Original:   " + aab);
-        System.out.println("Simplified: " + Simplifier.simplify(aab));
+        System.out.println("Simplified: " + simplify(aab));
         System.out.println("Expected:   " + ab);
         System.out.println();
         
@@ -41,7 +43,7 @@ public class DeepAbsorptionDemo {
         Union abc = new Union(ab2, c);
         Union aabc = new Union(a, abc);
         System.out.println("Original:   " + aabc);
-        System.out.println("Simplified: " + Simplifier.simplify(aabc));
+        System.out.println("Simplified: " + simplify(aabc));
         System.out.println("Expected:   " + abc);
         System.out.println();
         
@@ -52,7 +54,7 @@ public class DeepAbsorptionDemo {
         Union abcd = new Union(abc3, d);
         Union aabcd = new Union(a, abcd);
         System.out.println("Original:   " + aabcd);
-        System.out.println("Simplified: " + Simplifier.simplify(aabcd));
+        System.out.println("Simplified: " + simplify(aabcd));
         System.out.println("Expected:   " + abcd);
         System.out.println();
         
@@ -62,7 +64,7 @@ public class DeepAbsorptionDemo {
         Union abc4 = new Union(ab4, c);
         Union abca = new Union(abc4, a);
         System.out.println("Original:   " + abca);
-        System.out.println("Simplified: " + Simplifier.simplify(abca));
+        System.out.println("Simplified: " + simplify(abca));
         System.out.println("Expected:   " + abc4);
         System.out.println();
         
@@ -72,7 +74,7 @@ public class DeepAbsorptionDemo {
         Union abc5 = new Union(ab5, c);
         Union babc = new Union(b, abc5);
         System.out.println("Original:   " + babc);
-        System.out.println("Simplified: " + Simplifier.simplify(babc));
+        System.out.println("Simplified: " + simplify(babc));
         System.out.println("Expected:   " + abc5);
         System.out.println();
         
@@ -82,7 +84,7 @@ public class DeepAbsorptionDemo {
         Union bc6 = new Union(b, c);
         Union abc6 = new Union(ab6, bc6);
         System.out.println("Original:   " + abc6);
-        System.out.println("Simplified: " + Simplifier.simplify(abc6));
+        System.out.println("Simplified: " + simplify(abc6));
         System.out.println("Note: B appears in both sides, but no full absorption");
         System.out.println();
         
@@ -92,7 +94,7 @@ public class DeepAbsorptionDemo {
         Union cd7 = new Union(c, d);
         Union abcd7 = new Union(ab7, cd7);
         System.out.println("Original:   " + abcd7);
-        System.out.println("Simplified: " + Simplifier.simplify(abcd7));
+        System.out.println("Simplified: " + simplify(abcd7));
         System.out.println("Note: No common elements, no absorption");
         System.out.println();
         
@@ -102,7 +104,7 @@ public class DeepAbsorptionDemo {
         Union emptyAB = new Union(emptyA, b);
         Union aEmptyAB = new Union(a, emptyAB);
         System.out.println("Original:   " + aEmptyAB);
-        System.out.println("Simplified: " + Simplifier.simplify(aEmptyAB));
+        System.out.println("Simplified: " + simplify(aEmptyAB));
         System.out.println("Note: Empty removed first, then absorption applied");
         System.out.println();
         
@@ -110,7 +112,7 @@ public class DeepAbsorptionDemo {
         System.out.println("Example 9: Factory Method vs Simplifier");
         Expression factoryResult = a.union(ab);
         Expression simplifierInput = new Union(a, ab);
-        Expression simplifierResult = Simplifier.simplify(simplifierInput);
+        Expression simplifierResult = simplify(simplifierInput);
         System.out.println("Factory (a.union(a|b)):     " + factoryResult);
         System.out.println("Simplifier (simplify(a|(a|b))): " + simplifierResult);
         System.out.println("Are they equal? " + factoryResult.equals(simplifierResult));

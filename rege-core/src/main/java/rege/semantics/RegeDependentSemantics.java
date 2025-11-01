@@ -133,8 +133,8 @@ public class RegeDependentSemantics<T> {
                 return Expression.EMPTY;
             }
             
-            List<Expression> next = execute(actions.get(0), symbol, current);
-            current = next.get(0);
+            List<Expression> next = execute(actions.getFirst(), symbol, current);
+            current = next.getFirst();
         }
         
         return current;
