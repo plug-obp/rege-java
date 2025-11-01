@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.1.0] - 2025-11-01
+## [1.1.0] - Unreleased
 
 ### Added
 
@@ -32,11 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated CI/CD pipeline
   - Refined artifact publishing patterns (`*/build/libs/*.jar`)
   - Added token and actor configuration
+- Updated Gradle to version 9.1.0
 
 ### Fixed
 
 - Minor code quality improvements in `RegeDependentSemantics`
 - Updated `DeepAbsorptionDemo` for better demonstration clarity
+- Added javadoc documentation to all `module-info.java` files to eliminate javadoc warnings
 
 ## [1.0.0] - 2025-10-25
 

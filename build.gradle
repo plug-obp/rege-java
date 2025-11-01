@@ -73,12 +73,6 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'maven-publish'
 
-    tasks.withType(Javadoc) {
-        options.addStringOption('Xdoclint:none', '-quiet')
-        options.quiet()
-        failOnError = false  // Don't fail build on javadoc errors
-    }
-
     java {
         withJavadocJar()
         withSourcesJar()
