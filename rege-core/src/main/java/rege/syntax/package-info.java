@@ -137,7 +137,7 @@
  *   <li>LSP (Language Server Protocol) integration</li>
  * </ul>
  * 
- * <p><b>See:</b> {@link rege.reader.infra} package documentation
+ * <p><b>See:</b> reader-infra module package documentation
  * 
  * <h3>Token Content Validation</h3>
  * <p>Both parsers support validating token content using {@link rege.reader.infra.AlienValidator}.
@@ -285,6 +285,5 @@
  * @see rege.syntax.RegeReaderLeft
  * @see rege.syntax.PrettyPrinter
  * @see rege.syntax.model
- * @see rege.reader.infra
  */
 package rege.syntax;
