@@ -3,6 +3,7 @@ package rege.modelchecker;
 import obp3.modelchecking.EmptinessCheckerAnswer;
 import obp3.modelchecking.tools.ModelCheckerBuilder;
 import obp3.runtime.IExecutable;
+import obp3.runtime.sli.DependentSemanticRelation;
 import obp3.runtime.sli.SemanticRelation;
 import obp3.runtime.sli.Step;
 import obp3.traversal.dfs.DepthFirstTraversal;
@@ -12,6 +13,7 @@ import rege.semantics.RegeDependentSemantics;
 import rege.syntax.RegeReader;
 import rege.syntax.model.Expression;
 
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 
 /**
@@ -159,6 +161,10 @@ public class StepModelChecker<MA, MC> {
         this.depthBound = depthBound;
     }
 
+    DependentSemanticRelation<Step<MA, MC>, Brzozowski<Step<MA, MC>>, Expression> propertySemanticsProvider(BiPredicate<String, Step<MA, MC>> atomEval) {
+        return new DependentSemantics<>(propertyModel, atomicPropositionEvaluator);
+    }
+
     /**
      * Creates an executable model checker for verifying the property against the system.
      *
@@ -176,12 +182,12 @@ public class StepModelChecker<MA, MC> {
      * @return an executable that performs the model checking when run
      */
     public IExecutable<EmptinessCheckerAnswer<?>> modelChecker() {
-        var propertySemantics = new DependentSemantics<>(propertyModel, atomicPropositionEvaluator);
+//        var propertySemantics = new DependentSemantics<>(propertyModel, atomicPropositionEvaluator);
         var builder =
                 new ModelCheckerBuilder<MA, MC, Brzozowski<Step<MA, MC>>, Expression>()
                         .modelSemantics(modelSemantics)
-                        .propertySemantics(propertySemantics)
-                        .acceptingPredicateForProduct((c) -> RegeDependentSemantics.isAccepting(c.r()))
+                        .propertySemantics(this::propertySemanticsProvider)
+                        .acceptingPredicateForProduct((c, sem) -> RegeDependentSemantics.isAccepting(c.r()))
                         .buchi(false)
                         .traversalStrategy(traversalAlgorithm)
                         .depthBound(depthBound);
