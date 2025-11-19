@@ -17,7 +17,7 @@ public class RegeModelCheckerTest {
         default      -> NBitsSLIMock.stepAtomEvaluator(atom, step);
     };
 
-    IExecutable<EmptinessCheckerAnswer<?>> mc(int max, int deadlock, String property) {
+    IExecutable<?, EmptinessCheckerAnswer<?>> mc(int max, int deadlock, String property) {
         var checker = new StepModelChecker<>(
                 new NBitsSLIMock(max, deadlock),
                 atomEvaluatorAdapter,
@@ -25,7 +25,7 @@ public class RegeModelCheckerTest {
         return checker.modelChecker();
     }
 
-    IExecutable<EmptinessCheckerAnswer<?>> mc(int max, String property) {
+    IExecutable<?, EmptinessCheckerAnswer<?>> mc(int max, String property) {
         var checker = new StepModelChecker<>(
                 new NBitsSLIMock(max),
                 atomEvaluatorAdapter,

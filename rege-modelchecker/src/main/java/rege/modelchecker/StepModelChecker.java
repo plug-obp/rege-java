@@ -181,7 +181,7 @@ public class StepModelChecker<MA, MC> {
      *
      * @return an executable that performs the model checking when run
      */
-    public IExecutable<EmptinessCheckerAnswer<?>> modelChecker() {
+    public IExecutable<?, EmptinessCheckerAnswer<?>> modelChecker() {
 //        var propertySemantics = new DependentSemantics<>(propertyModel, atomicPropositionEvaluator);
         var builder =
                 new ModelCheckerBuilder<MA, MC, Brzozowski<Step<MA, MC>>, Expression>()
