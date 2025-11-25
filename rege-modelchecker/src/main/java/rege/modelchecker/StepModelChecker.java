@@ -1,11 +1,13 @@
 package rege.modelchecker;
 
 import obp3.modelchecking.EmptinessCheckerAnswer;
-import obp3.modelchecking.tools.ModelCheckerBuilder;
+import obp3.modelchecking.EmptinessCheckerStatus;
+import obp3.modelchecking.tools.XModelCheckerBuilder;
 import obp3.runtime.IExecutable;
 import obp3.runtime.sli.DependentSemanticRelation;
 import obp3.runtime.sli.SemanticRelation;
 import obp3.runtime.sli.Step;
+import obp3.sli.core.operators.product.Product;
 import obp3.traversal.dfs.DepthFirstTraversal;
 import rege.reader.infra.ParseResult;
 import rege.semantics.Brzozowski;
@@ -13,7 +15,6 @@ import rege.semantics.RegeDependentSemantics;
 import rege.syntax.RegeReader;
 import rege.syntax.model.Expression;
 
-import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 
 /**
@@ -181,10 +182,10 @@ public class StepModelChecker<MA, MC> {
      *
      * @return an executable that performs the model checking when run
      */
-    public IExecutable<?, EmptinessCheckerAnswer<?>> modelChecker() {
+    public IExecutable<EmptinessCheckerStatus, EmptinessCheckerAnswer<Product<MC, Expression>>> modelChecker() {
 //        var propertySemantics = new DependentSemantics<>(propertyModel, atomicPropositionEvaluator);
         var builder =
-                new ModelCheckerBuilder<MA, MC, Brzozowski<Step<MA, MC>>, Expression>()
+                new XModelCheckerBuilder<MA, MC, Brzozowski<Step<MA, MC>>, Expression>()
                         .modelSemantics(modelSemantics)
                         .propertySemantics(this::propertySemanticsProvider)
                         .acceptingPredicateForProduct((c, sem) -> RegeDependentSemantics.isAccepting(c.r()))

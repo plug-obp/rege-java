@@ -1,9 +1,13 @@
 package rege.modelchecker;
 
 import obp3.modelchecking.EmptinessCheckerAnswer;
+import obp3.modelchecking.EmptinessCheckerStatus;
 import obp3.runtime.IExecutable;
 import obp3.runtime.sli.Step;
+import obp3.sli.core.operators.product.Product;
+import obp3.utils.Either;
 import org.junit.jupiter.api.Test;
+import rege.syntax.model.Expression;
 
 import java.util.function.BiPredicate;
 
@@ -17,7 +21,7 @@ public class RegeModelCheckerTest {
         default      -> NBitsSLIMock.stepAtomEvaluator(atom, step);
     };
 
-    IExecutable<?, EmptinessCheckerAnswer<?>> mc(int max, int deadlock, String property) {
+    IExecutable<EmptinessCheckerStatus, EmptinessCheckerAnswer<Product<Integer, Expression>>> mc(int max, int deadlock, String property) {
         var checker = new StepModelChecker<>(
                 new NBitsSLIMock(max, deadlock),
                 atomEvaluatorAdapter,
@@ -25,7 +29,7 @@ public class RegeModelCheckerTest {
         return checker.modelChecker();
     }
 
-    IExecutable<?, EmptinessCheckerAnswer<?>> mc(int max, String property) {
+    IExecutable<EmptinessCheckerStatus, EmptinessCheckerAnswer<Product<Integer, Expression>>> mc(int max, String property) {
         var checker = new StepModelChecker<>(
                 new NBitsSLIMock(max),
                 atomEvaluatorAdapter,
