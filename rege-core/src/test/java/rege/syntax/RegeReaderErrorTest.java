@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for RegeReader error reporting with ParseResult.
  */
+@SuppressWarnings({"unchecked", "rawtypes"})
 class RegeReaderErrorTest {
     
     @Test
@@ -50,7 +51,7 @@ class RegeReaderErrorTest {
         assertTrue(result.isFailure());
         ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
         assertEquals(1, failure.errors().size());
-        assertTrue(failure.errors().get(0).message().contains("Unclosed token"));
+        assertTrue(failure.errors().getFirst().message().contains("Unclosed token"));
     }
     
     @Test
@@ -59,7 +60,7 @@ class RegeReaderErrorTest {
         
         assertTrue(result.isFailure());
         ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
-        assertTrue(failure.errors().get(0).message().contains("Expected '['"));
+        assertTrue(failure.errors().getFirst().message().contains("Expected '['"));
     }
     
     @Test
@@ -68,7 +69,7 @@ class RegeReaderErrorTest {
         
         assertTrue(result.isFailure());
         ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
-        assertTrue(failure.errors().get(0).message().contains("Unclosed parenthesis"));
+        assertTrue(failure.errors().getFirst().message().contains("Unclosed parenthesis"));
     }
     
     @Test
@@ -77,7 +78,7 @@ class RegeReaderErrorTest {
         
         assertTrue(result.isFailure());
         ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
-        assertTrue(failure.errors().get(0).message().contains("Unexpected trailing"));
+        assertTrue(failure.errors().getFirst().message().contains("Unexpected trailing"));
     }
     
     @Test
@@ -86,7 +87,7 @@ class RegeReaderErrorTest {
         
         assertTrue(result.isFailure());
         ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
-        assertTrue(failure.errors().get(0).message().contains("Unexpected character"));
+        assertTrue(failure.errors().getFirst().message().contains("Unexpected character"));
     }
     
     @Test
@@ -102,7 +103,7 @@ class RegeReaderErrorTest {
         
         assertTrue(result.isFailure());
         ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
-        assertTrue(failure.errors().get(0).message().contains("after union operator"));
+        assertTrue(failure.errors().getFirst().message().contains("after union operator"));
     }
     
     @Test
@@ -111,7 +112,7 @@ class RegeReaderErrorTest {
         
         assertTrue(result.isFailure());
         ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
-        assertTrue(failure.errors().get(0).message().contains("after concatenation operator"));
+        assertTrue(failure.errors().getFirst().message().contains("after concatenation operator"));
     }
     
     @Test
@@ -120,7 +121,7 @@ class RegeReaderErrorTest {
         
         assertTrue(result.isFailure());
         ParseResult.Failure<Expression> failure = (ParseResult.Failure) result;
-        ParseError error = failure.errors().get(0);
+        ParseError error = failure.errors().getFirst();
         
         // Error should be somewhere in the input
         assertTrue(error.range().start().offset() >= 0);
@@ -168,7 +169,7 @@ class RegeReaderErrorTest {
     @Test
     void testMapSuccess() {
         ParseResult<Expression> result = RegeReader.parse("τ[a]");
-        ParseResult mapped = result.map(expr -> expr.star());
+        ParseResult mapped = result.map(Expression::star);
         
         assertTrue(mapped.isSuccess());
     }
@@ -176,7 +177,7 @@ class RegeReaderErrorTest {
     @Test
     void testMapFailure() {
         ParseResult<Expression> result = RegeReader.parse("τ[unclosed");
-        ParseResult mapped = result.map(expr -> expr.star());
+        ParseResult mapped = result.map(Expression::star);
         
         assertTrue(mapped.isFailure());
         assertEquals(result, mapped);
@@ -221,7 +222,7 @@ class RegeReaderErrorTest {
         
         if (result2 instanceof ParseResult.Failure<Expression> failure) {
             assertEquals(1, failure.errors().size());
-            assertEquals("Lowercase letters only", failure.errors().get(0).message());
+            assertEquals("Lowercase letters only", failure.errors().getFirst().message());
         }
     }
     
@@ -239,7 +240,7 @@ class RegeReaderErrorTest {
         
         if (result2 instanceof ParseResult.Failure<Expression> failure) {
             // Should have at least one validation error
-            assertTrue(failure.errors().size() >= 1);
+            assertFalse(failure.errors().isEmpty());
             boolean hasAlphanumericError = failure.errors().stream()
                 .anyMatch(e -> e.message().contains("Alphanumeric"));
             assertTrue(hasAlphanumericError, "Should have alphanumeric validation error");
@@ -273,7 +274,7 @@ class RegeReaderErrorTest {
         
         assertTrue(result.isFailure());
         if (result instanceof ParseResult.Failure<Expression> failure) {
-            ParseError error = failure.errors().get(0);
+            ParseError error = failure.errors().getFirst();
             
             // Error should point to the token value (inside brackets)
             assertTrue(error.range().start().column() > 1); // After 'τ['
