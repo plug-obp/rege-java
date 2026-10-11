@@ -2,6 +2,13 @@
 
 ## Overview
 
+The current base is **2.0.0**. It is a coordinated major-version change because
+reader-infra now uses zero-based lines and UTF-16 columns rather than one-based
+coordinates, and permits unlocated diagnostics. See the
+[reader-infra migration guide](../reader-infra/README.md#migrating-from-1x-to-200).
+Changing the base version does not publish a release; the examples below
+illustrate the repository's versioning and release workflow.
+
 This project uses **intelligent branch-based versioning** that automatically creates unique version numbers for every build while keeping clean versions for releases.
 
 ## Version Format

@@ -31,16 +31,19 @@
  * </ul>
  * 
  * <h3>Position Tracking</h3>
+ * <p>{@link rege.reader.infra.SourceText} provides the shared coordinate index,
+ * independent of syntax trees. It recognizes LF, CRLF and CR, converts Unicode
+ * code-point indices to UTF-16, and preserves original offsets through EOF.
  * <p>{@link rege.reader.infra.Position} tracks locations in source text with three coordinates:
  * <ul>
- *   <li><b>line</b> - 1-based line number (human-readable, LSP compatible)</li>
- *   <li><b>column</b> - 1-based column number (human-readable, LSP compatible)</li>
- *   <li><b>offset</b> - 0-based character offset (programmatic access)</li>
+ *   <li><b>line</b> - zero-based line number (LSP compatible)</li>
+ *   <li><b>column</b> - zero-based UTF-16 column (LSP default encoding)</li>
+ *   <li><b>offset</b> - zero-based UTF-16 offset (programmatic access)</li>
  * </ul>
  * 
  * <pre>{@code
- * Position pos = new Position(1, 5, 4);  // Line 1, column 5, offset 4
- * Position start = Position.start();      // (1, 1, 0)
+ * Position pos = new Position(0, 4, 4);  // Line 0, column 4, offset 4
+ * Position start = Position.start();      // (0, 0, 0)
  * }</pre>
  * 
  * <h3>Range Representation</h3>
@@ -70,8 +73,8 @@
  * String formatted = error.formatWithSource(source);
  * // Output:
  * // error at 1:5-1:6: Unexpected character '}'
- * //   let x = }
- * //           ^
+ * //   test}more
+ * //       ^
  * }</pre>
  * 
  * <p><b>Severity Levels</b> (LSP DiagnosticSeverity compatible):
@@ -82,6 +85,12 @@
  *   <li>{@code HINT} - Suggestion (severity 4)</li>
  * </ul>
  * 
+ * <p>A diagnostic may have a null range when source evidence is unavailable.
+ * Formatting then includes only the severity, message and optional code; it
+ * never invents a source position or excerpt.
+ * Human error rendering adds one to line and column numbers; structured
+ * coordinates and Position/Range string representations remain zero-based.
+ *
  * <h3>Exception Handling</h3>
  * <p>{@link rege.reader.infra.ParseException} bridges Result Monad and exception-based error handling:
  * 
@@ -254,6 +263,9 @@
  * <pre>{@code
  * // Convert ParseError to LSP Diagnostic
  * Diagnostic toDiagnostic(ParseError error) {
+ *     if (error.range() == null) {
+ *         throw new IllegalArgumentException("An unlocated error has no LSP range");
+ *     }
  *     return new Diagnostic(
  *         toLspRange(error.range()),
  *         error.message(),
@@ -266,12 +278,12 @@
  * org.eclipse.lsp4j.Range toLspRange(Range range) {
  *     return new org.eclipse.lsp4j.Range(
  *         new org.eclipse.lsp4j.Position(
- *             range.start().line() - 1,  // LSP is 0-based
- *             range.start().column() - 1
+ *             range.start().line(),  // Already zero-based
+ *             range.start().column()
  *         ),
  *         new org.eclipse.lsp4j.Position(
- *             range.end().line() - 1,
- *             range.end().column() - 1
+ *             range.end().line(),
+ *             range.end().column()
  *         )
  *     );
  * }
@@ -299,6 +311,7 @@
  * </ul>
  * 
  * @see rege.reader.infra.ParseResult
+ * @see rege.reader.infra.SourceText
  * @see rege.reader.infra.Position
  * @see rege.reader.infra.Range
  * @see rege.reader.infra.ParseError

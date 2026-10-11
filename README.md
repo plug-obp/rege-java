@@ -1,7 +1,7 @@
 # Rege
 
 ![Build Status](https://github.com/plug-obp/rege-java/actions/workflows/build-and-publish.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-466%20passing-success)
+![Tests](https://img.shields.io/badge/tests-481%20passing-success)
 ![Java](https://img.shields.io/badge/java-23-blue)
 
 A Java 23 implementation of regular expression syntax and semantics with formal language properties.
@@ -19,9 +19,14 @@ Regular expression syntax model, parser, and semantics including:
 ### reader-infra
 Generic parsing infrastructure for building text parsers:
 - Result monad pattern for type-safe error handling
-- Position tracking (line, column, offset)
+- Shared zero-based source coordinates (UTF-16 columns and offsets, half-open ranges)
 - LSP-compatible error reporting
 - Zero dependencies
+
+Version **2.0.0** corrects reader-infra's one-based line and
+column contract in 1.x to match LSP, and supports diagnostics without source
+locations. See the [migration notes](reader-infra/README.md#migrating-from-1x-to-200)
+before updating consumers. The repository versions all modules together.
 
 ## Build
 
@@ -45,8 +50,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.obpcdl:rege-core:1.0.0-main.3.b2bb1c4'
-    implementation 'org.obpcdl:reader-infra:1.0.0-main.3.b2bb1c4'
+    implementation 'org.obpcdl:rege-core:2.0.0'
+    implementation 'org.obpcdl:reader-infra:2.0.0'
 }
 ```
 
@@ -65,6 +70,7 @@ MIT License - See LICENSE file for details
 
 - [CI/CD Setup](docs/CI-CD-SETUP.md)
 - [Versioning Strategy](docs/VERSIONING.md)
+- [2.0.0 Release Notes](docs/releases/2.0.0.md)
 - [Architecture Analysis](docs/architectural-analysis.md)
 - [rege-core README](rege-core/README.md)
 - [reader-infra README](reader-infra/README.md)

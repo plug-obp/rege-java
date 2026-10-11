@@ -80,23 +80,55 @@ Optional<MyType> opt = parser.parse(input).toOptional();
 
 ### Position - Source Location
 
-Tracks positions in source text with three coordinates:
+All coordinates are zero-based. Columns and absolute offsets count UTF-16 code
+units, matching Java strings and LSP's default `utf-16` encoding. Ranges are
+half-open: the start is included and the end is excluded. Tabs occupy one code
+unit; a supplementary Unicode character occupies two.
+
+This follows the LSP [Position](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#position)
+and [Range](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#range)
+contracts. An LSP connection negotiating another encoding must convert at its
+boundary. A user interface may display one-based numbers, but must not feed them
+back into these coordinates.
 
 ```java
 public record Position(
-    int line,      // 1-based (human-readable)
-    int column,    // 1-based (human-readable)
-    int offset     // 0-based (programmatic)
+    int line,      // zero-based (LSP)
+    int column,    // zero-based UTF-16 column
+    int offset     // zero-based UTF-16 offset
 ) implements Comparable<Position> {
-    public static Position start() { return new Position(1, 1, 0); }
+    public static Position start() { return new Position(0, 0, 0); }
 }
 ```
 
 **Example:**
 ```java
-Position pos = new Position(1, 5, 4);  // Line 1, col 5, offset 4
-Position start = Position.start();      // (1, 1, 0)
+Position pos = new Position(0, 4, 4);  // Line 0, col 4, offset 4
+Position start = Position.start();      // (0, 0, 0)
 ```
+
+### SourceText - Shared Coordinate Index
+
+`SourceText` owns text indexing independently of any parser or syntax tree. It
+recognizes LF, CRLF and CR without changing the original text. EOF is an ordinary
+position; a trailing newline creates an empty final line. Inside a CRLF pair,
+the column stays at the preceding line's end until the entire pair is consumed;
+the original absolute offset is retained.
+
+```java
+SourceText text = new SourceText("a😀\r\nb");
+Position afterEmoji = text.positionAt(3);  // (line=0, column=3, offset=3)
+Range multiline = text.range(1, 6);        // [0:1, 1:1)
+int utf16 = text.offsetAtCodePoint(2);      // 3; convert ANTLR code-point indices
+int offset = text.offsetAt(1, 1);          // 6; convert an LSP position
+```
+
+`positionAt`, `range`, and `offsetAtCodePoint` require in-bounds offsets, including
+EOF. `offsetAt(line, column)` clamps excessive columns to the line's text end and
+excessive lines to EOF, and rejects negative values. `lineCount`,
+`lineStartOffset`, and `lineEndOffset` support line-based tooling; the end excludes
+newline characters. A parser must handle synthetic/recovery token indices before
+conversion rather than treating a sentinel as a real source location.
 
 ### Range - Text Spans
 
@@ -122,11 +154,11 @@ if (span.contains(somePosition)) {
 
 ### ParseError - Error Reporting
 
-Detailed error information with LSP compatibility:
+Detailed error information with optional source evidence:
 
 ```java
 public record ParseError(
-    Range range,
+    Range range,           // nullable when no source evidence is available
     String message,
     Severity severity,      // ERROR, WARNING, INFO, HINT
     Optional<String> code
@@ -147,9 +179,18 @@ ParseError error = new ParseError(
 String formatted = error.formatWithSource(source);
 // Output:
 // error at 1:5-1:6: Unexpected character '}'
-//   let x = }
-//           ^
+//   test}more
+//       ^
 ```
+
+An absent range is preserved: `new ParseError(null, "Invalid expression")`
+formats as `error: Invalid expression`, even when source text is supplied. No
+position or excerpt is invented. LSP diagnostics need a range; a tool must expose
+an unlocated diagnostic through an appropriate separate channel.
+
+`ParseError.toString()` and `formatWithSource()` display one-based line and
+column numbers for people. This conversion is confined to error rendering;
+stored coordinates and `Position`/`Range` string representations stay zero-based.
 
 **Severity levels** (LSP DiagnosticSeverity):
 - `ERROR` (1) - Prevents parsing
@@ -195,7 +236,7 @@ if (input.hasNext() && input.peek() == 'h') {
 
 **Position tracking:**
 - Automatically increments offset
-- Handles newlines (increments line, resets column)
+- Uses `SourceText` for LF, CRLF and CR with zero-based UTF-16 coordinates
 - Always accurate for error reporting
 
 ### AlienValidator - Embedded Syntax Validation
@@ -330,6 +371,9 @@ import org.eclipse.lsp4j.*;
 
 // Convert ParseError to LSP Diagnostic
 public Diagnostic toDiagnostic(ParseError error) {
+    if (error.range() == null) {
+        throw new IllegalArgumentException("An unlocated error has no LSP range");
+    }
     return new Diagnostic(
         toLspRange(error.range()),
         error.message(),
@@ -343,12 +387,12 @@ public Diagnostic toDiagnostic(ParseError error) {
 private org.eclipse.lsp4j.Range toLspRange(Range range) {
     return new org.eclipse.lsp4j.Range(
         new org.eclipse.lsp4j.Position(
-            range.start().line() - 1,    // LSP is 0-based
-            range.start().column() - 1
+            range.start().line(),    // Already zero-based
+            range.start().column()
         ),
         new org.eclipse.lsp4j.Position(
-            range.end().line() - 1,
-            range.end().column() - 1
+            range.end().line(),
+            range.end().column()
         )
     );
 }
@@ -380,7 +424,7 @@ public void publishDiagnostics(String uri, ParseResult<?> result) {
 ## Performance
 
 - **Peekable**: O(1) character access via direct string indexing
-- **Position tracking**: Minimal per-character overhead
+- **Source indexing**: O(n) setup, O(log lines) position lookup, O(1) code-point conversion
 - **Error collection**: Amortized O(1) append with ArrayList
 - **Immutable collections**: Defensive copies prevent mutations
 - **Records**: Efficient memory layout and fast equality checks
@@ -392,13 +436,31 @@ public void publishDiagnostics(String uri, ParseResult<?> result) {
 
 ## Test Coverage
 
-125 comprehensive tests covering:
+Tests cover:
 - Position validation and comparison
 - Range creation and validation
 - ParseError formatting and severity
 - ParseResult pattern matching and composition
 - ParseException formatting
 - Peekable position tracking and newline handling
+- Shared coordinates across LF/CRLF/CR, UTF-16 supplementary characters, and EOF
+- Missing source evidence and bounded multiline diagnostic excerpts
+
+## Migrating from 1.x to 2.0.0
+
+This is a breaking coordinate correction. Version 1.x used one-based lines and
+columns despite describing them as LSP-compatible. Version 2.0.0 uses zero-based
+lines and UTF-16 columns throughout; offsets remain zero-based UTF-16 and ranges
+remain half-open. Remove `- 1` conversions in LSP adapters and update literal
+`Position` construction and expected structured diagnostic coordinates; human
+error rendering remains one-based. Prefer `SourceText`
+when deriving coordinates from text. CRLF is one line break and bare CR is now
+recognized as a line break. `ParseError.range()` may be null when source evidence
+is unavailable; render the message without inventing a location.
+
+The repository shares one base version across modules, so the coordinated base
+version is 2.0.0. The existing build adds branch/local suffixes except for tagged
+release builds; see [versioning](../docs/VERSIONING.md).
 
 ## License
 

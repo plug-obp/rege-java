@@ -162,7 +162,8 @@ class Peekable { /* Position tracking character iterator */ }
 1. **Extracted to `reader-infra` Module**: Infrastructure now standalone and reusable by any parser
 2. **Generic `ParseResult<T>`**: Not Expression-specific, works with any parse target type
 3. **Sealed Interface**: Enforces exhaustive pattern matching at compile time
-4. **Position Tracking**: 1-based line/column (human-readable) + 0-based offset (programmatic)
+4. **Position Tracking**: Since 2.0.0, zero-based lines and UTF-16 columns/offsets,
+   indexed by syntax-independent `SourceText`; half-open ranges and LF/CRLF/CR.
 5. **Range-Based Errors**: Precise error locations with start/end positions
 6. **LSP Compatibility**: Error structure matches Language Server Protocol
 7. **Backward Compatibility**: Deprecated `readExpression()` methods preserved in rege-core

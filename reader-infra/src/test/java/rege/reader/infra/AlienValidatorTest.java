@@ -9,8 +9,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AlienValidatorTest {
     
-    private static final Position START = new Position(1, 1, 0);
-    private static final Position END = new Position(1, 6, 5);
+    private static final Position START = new Position(0, 0, 0);
+    private static final Position END = new Position(0, 5, 5);
     private static final Range RANGE = new Range(START, END);
     
     // ============================================================================

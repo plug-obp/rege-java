@@ -49,8 +49,8 @@ class PeekableTest {
         Peekable peekable = new Peekable("abc");
         Position pos = peekable.position();
         
-        assertEquals(1, pos.line());
-        assertEquals(1, pos.column());
+        assertEquals(0, pos.line());
+        assertEquals(0, pos.column());
         assertEquals(0, pos.offset());
     }
     
@@ -60,14 +60,14 @@ class PeekableTest {
         
         peekable.next(); // 'a'
         Position pos = peekable.position();
-        assertEquals(1, pos.line());
-        assertEquals(2, pos.column());
+        assertEquals(0, pos.line());
+        assertEquals(1, pos.column());
         assertEquals(1, pos.offset());
         
         peekable.next(); // 'b'
         pos = peekable.position();
-        assertEquals(1, pos.line());
-        assertEquals(3, pos.column());
+        assertEquals(0, pos.line());
+        assertEquals(2, pos.column());
         assertEquals(2, pos.offset());
     }
     
@@ -80,14 +80,14 @@ class PeekableTest {
         peekable.next(); // '\n'
         
         Position pos = peekable.position();
-        assertEquals(2, pos.line());
-        assertEquals(1, pos.column());
+        assertEquals(1, pos.line());
+        assertEquals(0, pos.column());
         assertEquals(3, pos.offset());
         
         peekable.next(); // 'c'
         pos = peekable.position();
-        assertEquals(2, pos.line());
-        assertEquals(2, pos.column());
+        assertEquals(1, pos.line());
+        assertEquals(1, pos.column());
         assertEquals(4, pos.offset());
     }
     
@@ -98,18 +98,18 @@ class PeekableTest {
         peekable.next(); // 'a'
         peekable.next(); // '\n'
         Position pos = peekable.position();
-        assertEquals(2, pos.line());
-        assertEquals(1, pos.column());
+        assertEquals(1, pos.line());
+        assertEquals(0, pos.column());
         
         peekable.next(); // '\n'
         pos = peekable.position();
-        assertEquals(3, pos.line());
-        assertEquals(1, pos.column());
+        assertEquals(2, pos.line());
+        assertEquals(0, pos.column());
         
         peekable.next(); // 'b'
         pos = peekable.position();
-        assertEquals(3, pos.line());
-        assertEquals(2, pos.column());
+        assertEquals(2, pos.line());
+        assertEquals(1, pos.column());
     }
     
     @Test
@@ -161,10 +161,10 @@ class PeekableTest {
         peekable.next(); // 'c'
         
         Range range = peekable.rangeFrom(start);
-        assertEquals(1, range.start().line());
-        assertEquals(1, range.start().column());
-        assertEquals(2, range.end().line());
-        assertEquals(2, range.end().column());
+        assertEquals(0, range.start().line());
+        assertEquals(0, range.start().column());
+        assertEquals(1, range.end().line());
+        assertEquals(1, range.end().column());
         assertEquals(4, range.length());
     }
     
@@ -174,8 +174,8 @@ class PeekableTest {
         
         assertFalse(peekable.hasNext());
         Position pos = peekable.position();
-        assertEquals(1, pos.line());
-        assertEquals(1, pos.column());
+        assertEquals(0, pos.line());
+        assertEquals(0, pos.column());
         assertEquals(0, pos.offset());
     }
 }

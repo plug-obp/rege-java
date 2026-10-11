@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ParseExceptionTest {
     
-    private static final Range RANGE = Range.at(new Position(1, 5, 4));
+    private static final Range RANGE = Range.at(new Position(0, 4, 4));
     private static final ParseError ERROR = new ParseError(RANGE, "Test error");
     
     @Test
@@ -63,8 +63,8 @@ class ParseExceptionTest {
     
     @Test
     void testMessageWithSourceContext() {
-        Position start = new Position(1, 5, 4);
-        Position end = new Position(1, 6, 5);
+        Position start = new Position(0, 4, 4);
+        Position end = new Position(0, 5, 5);
         Range range = new Range(start, end);
         ParseError error = new ParseError(range, "Unexpected character");
         

@@ -316,7 +316,8 @@ Optional<Expression> opt = result.toOptional();
 ### 4.2 Error Reporting Quality
 
 **Position Tracking:**
-- 1-based line/column (human-readable, LSP compatible)
+- Since 2.0.0, zero-based lines and UTF-16 columns/offsets (LSP default encoding),
+  with half-open ranges and a shared `SourceText` index for LF/CRLF/CR.
 - 0-based offset (programmatic access)
 - Automatically tracked during parsing
 

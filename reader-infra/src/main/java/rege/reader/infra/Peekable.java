@@ -22,10 +22,8 @@ import java.util.NoSuchElementException;
  */
 public class Peekable implements Iterator<Character> {
     
-    private final String input;
+    private final SourceText input;
     private int offset = 0;
-    private int line = 1;
-    private int column = 1;
     
     /**
      * Creates a peekable iterator over the given string.
@@ -33,7 +31,7 @@ public class Peekable implements Iterator<Character> {
      * @param input the string to iterate over
      */
     public Peekable(String input) {
-        this.input = input;
+        this.input = new SourceText(input);
     }
     
     /**
@@ -58,17 +56,7 @@ public class Peekable implements Iterator<Character> {
         if (!hasNext()) {
             throw new NoSuchElementException("No more characters");
         }
-        char ch = input.charAt(offset++);
-        
-        // Track line and column
-        if (ch == '\n') {
-            line++;
-            column = 1;
-        } else {
-            column++;
-        }
-        
-        return ch;
+        return input.source().charAt(offset++);
     }
     
     /**
@@ -81,7 +69,7 @@ public class Peekable implements Iterator<Character> {
         if (!hasNext()) {
             throw new NoSuchElementException("No more characters");
         }
-        return input.charAt(offset);
+        return input.source().charAt(offset);
     }
     
     /**
@@ -90,7 +78,7 @@ public class Peekable implements Iterator<Character> {
      * @return the current position (line, column, offset)
      */
     public Position position() {
-        return new Position(line, column, offset);
+        return input.positionAt(offset);
     }
     
     /**
@@ -120,6 +108,6 @@ public class Peekable implements Iterator<Character> {
      * @return the source string
      */
     public String source() {
-        return input;
+        return input.source();
     }
 }

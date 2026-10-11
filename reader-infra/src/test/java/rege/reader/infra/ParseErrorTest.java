@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ParseErrorTest {
     
-    private static final Position POS = new Position(1, 5, 4);
+    private static final Position POS = new Position(0, 4, 4);
     private static final Range RANGE = Range.at(POS);
     
     @Test
@@ -50,9 +50,12 @@ class ParseErrorTest {
     }
     
     @Test
-    void testNullRange() {
-        assertThrows(NullPointerException.class, 
-            () -> new ParseError(null, "message"));
+    void testAbsentRangePreservesAnUnlocatedDiagnostic() {
+        ParseError error = new ParseError(null, "message");
+        assertNull(error.range());
+        assertEquals("error: message", error.toString());
+        assertEquals("error: message", error.formatWithSource("hidden source"));
+        assertEquals("error: message", error.formatWithSource(null));
     }
     
     @Test
@@ -96,8 +99,8 @@ class ParseErrorTest {
     
     @Test
     void testFormatWithSource() {
-        Position start = new Position(2, 5, 10);
-        Position end = new Position(2, 6, 11);
+        Position start = new Position(1, 4, 10);
+        Position end = new Position(1, 5, 11);
         Range range = new Range(start, end);
         ParseError error = new ParseError(range, "Unexpected character '}'");
         
@@ -111,8 +114,8 @@ class ParseErrorTest {
     
     @Test
     void testFormatWithSourceMultiCharError() {
-        Position start = new Position(1, 1, 0);
-        Position end = new Position(1, 6, 5);
+        Position start = new Position(0, 0, 0);
+        Position end = new Position(0, 5, 5);
         Range range = new Range(start, end);
         ParseError error = new ParseError(range, "Invalid token");
         
@@ -121,6 +124,33 @@ class ParseErrorTest {
         
         assertTrue(formatted.contains("hello world"));
         assertTrue(formatted.contains("^^^^^"));
+    }
+
+    @Test
+    void testHumanFormattingConvertsZeroBasedCoordinatesAcrossAllLineEndings() {
+        for (String newline : new String[] {"\n", "\r\n", "\r"}) {
+            SourceText text = new SourceText("abc" + newline + "test}xyz");
+            int offset = 3 + newline.length() + 4;
+            ParseError error = new ParseError(text.range(offset, offset + 1), "Unexpected character");
+            assertEquals("error at 2:5-2:6: Unexpected character\n  test}xyz\n      ^",
+                error.formatWithSource(text.source()));
+            assertEquals(new Position(1, 4, offset), error.range().start());
+        }
+    }
+
+    @Test
+    void testMultilineUnderlineStopsAtFirstLineEnd() {
+        SourceText text = new SourceText("abc\r\ndefgh\nijk");
+        ParseError error = new ParseError(text.range(1, 12), "Invalid token");
+        assertEquals("error at 1:2-3:2: Invalid token\n  abc\n   ^^",
+            error.formatWithSource(text.source()));
+    }
+
+    @Test
+    void testEofAfterNewlineShowsAnEmptySourceLine() {
+        SourceText text = new SourceText("abc\r\n");
+        ParseError error = new ParseError(text.range(5, 5), "Expected token");
+        assertEquals("error at 2:1: Expected token\n  \n  ^", error.formatWithSource(text.source()));
     }
     
     @Test

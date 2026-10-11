@@ -13,7 +13,7 @@ class ParseResultTest {
     
     private static final String VALUE_A = "value_a";
     private static final String VALUE_B = "value_b";
-    private static final Range RANGE = Range.at(new Position(1, 1, 0));
+    private static final Range RANGE = Range.at(new Position(0, 0, 0));
     private static final ParseError ERROR = new ParseError(RANGE, "Test error");
     
     @Test

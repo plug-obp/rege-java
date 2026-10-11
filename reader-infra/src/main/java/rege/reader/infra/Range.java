@@ -9,12 +9,12 @@ import java.util.Objects;
  * 
  * <p><b>Usage:</b>
  * <pre>{@code
- * Position start = new Position(1, 1, 0);
- * Position end = new Position(1, 5, 4);
+ * Position start = new Position(0, 0, 0);
+ * Position end = new Position(0, 4, 4);
  * Range range = new Range(start, end);
  * 
  * // Zero-width range at a position
- * Range point = Range.at(new Position(2, 3, 10));
+ * Range point = Range.at(new Position(1, 2, 10));
  * }</pre>
  * 
  * @param start the start position (inclusive)
@@ -55,8 +55,8 @@ public record Range(Position start, Position end) {
     }
     
     /**
-     * Get the length of this range in characters.
-     * @return the number of characters between start and end
+     * Get the length of this range in UTF-16 code units.
+     * @return the number of UTF-16 code units between start and end
      */
     public int length() {
         return end.offset() - start.offset();

@@ -1,22 +1,21 @@
 package rege.reader.infra;
 
-import java.util.Objects;
-
 /**
  * Represents a position in source text.
  * 
- * <p>Position uses 1-based line and column numbers (standard for editors and LSP).
- * The offset is 0-based for direct string indexing.
+ * <p>Line, column, and offset are zero-based. Column and offset count UTF-16
+ * code units, matching Java string indexing and LSP's default position encoding.
+ * Use {@link SourceText} to derive consistent coordinates from original text.
  * 
  * <p><b>Usage:</b>
  * <pre>{@code
- * Position pos = new Position(1, 5, 4);  // Line 1, column 5, offset 4
- * Position start = Position.start();      // (1, 1, 0)
+ * Position pos = new Position(0, 4, 4);  // First line, fifth UTF-16 code unit
+ * Position start = Position.start();      // (0, 0, 0)
  * }</pre>
  * 
- * @param line 1-based line number
- * @param column 1-based column number (UTF-16 code units)
- * @param offset 0-based character offset from start of input
+ * @param line zero-based line number
+ * @param column zero-based column (UTF-16 code units)
+ * @param offset zero-based UTF-16 offset from start of input
  */
 public record Position(int line, int column, int offset) implements Comparable<Position> {
     
@@ -24,11 +23,11 @@ public record Position(int line, int column, int offset) implements Comparable<P
      * Compact constructor that validates line, column, and offset values.
      */
     public Position {
-        if (line < 1) {
-            throw new IllegalArgumentException("line must be >= 1, got: " + line);
+        if (line < 0) {
+            throw new IllegalArgumentException("line must be >= 0, got: " + line);
         }
-        if (column < 1) {
-            throw new IllegalArgumentException("column must be >= 1, got: " + column);
+        if (column < 0) {
+            throw new IllegalArgumentException("column must be >= 0, got: " + column);
         }
         if (offset < 0) {
             throw new IllegalArgumentException("offset must be >= 0, got: " + offset);
@@ -36,11 +35,11 @@ public record Position(int line, int column, int offset) implements Comparable<P
     }
     
     /**
-     * Create a position at the start of input (line 1, column 1, offset 0).
+     * Create a position at the start of input (line 0, column 0, offset 0).
      * @return a position representing the start of input
      */
     public static Position start() {
-        return new Position(1, 1, 0);
+        return new Position(0, 0, 0);
     }
     
     @Override
